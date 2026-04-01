@@ -7,24 +7,9 @@ from supabase import create_client, Client
 from docling.document_converter import DocumentConverter
 from app.core.intent import DocumentIntentAnalyzer
 from app.core.intent import QueryIntentAnalyzer
+from app.core.mr import model_router
 
 load_dotenv()
-
-# ─── MODEL ROUTER ────────────────────────────────────────────────────────────
-
-def seleccionar_modelo(chars: int, tiene_tablas: bool, source_type: str) -> dict:
-    if chars > 100000:
-        return {"modelo": "claude-opus-4-6", "tier": 4, "proveedor": "anthropic"}
-    if source_type in ["pdf", "docx"] and chars > 50000:
-        return {"modelo": "claude-sonnet-4-6", "tier": 3, "proveedor": "anthropic"}
-    if tiene_tablas or chars > 20000:
-        return {"modelo": "gemini-2.5-flash", "tier": 2, "proveedor": "google"}
-    return {"modelo": "gemini-2.5-flash", "tier": 1, "proveedor": "google"}
-
-
-def enriquecer_con_llm(texto: str, entidades_raw: list, modelo_info: dict) -> list:
-    print(f"  [MR] Modelo seleccionado: {modelo_info['modelo']} (Tier {modelo_info['tier']})")
-    return entidades_raw
 
 
 # ─── CLASIFICADOR DE CONTENIDO ───────────────────────────────────────────────
@@ -272,11 +257,13 @@ class DigestInputIntelligence:
                   f"narrativo={clasificacion['es_narrativo']}")
 
             # 4. Model Router
-            modelo_info = seleccionar_modelo(
+            modelo_info = model_router.seleccionar(
                 chars=clasificacion["chars"],
                 tiene_tablas=clasificacion["tiene_tablas"],
-                source_type=source_type
-            )
+                source_type=source_type,
+                doc_type=doc_type
+                )
+            model_router.log_seleccion(modelo_info)
 
             # 5. Registrar documento en Supabase
             doc_hash = self._calcular_hash(texto)
@@ -308,9 +295,7 @@ class DigestInputIntelligence:
                 entidades_raw += self._extraer_con_llamaindex(texto)
 
             # 7. Model Router — enriquecimiento LLM
-            entidades_enriquecidas = enriquecer_con_llm(
-                texto, entidades_raw, modelo_info
-            )
+            entidades_enriquecidas = entidades_raw
 
             # 8. Persistir en Supabase con IHS
             datos_finales = []
