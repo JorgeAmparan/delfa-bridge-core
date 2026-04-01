@@ -5,33 +5,24 @@ from dotenv import load_dotenv
 from langextract import data as lx_data
 from supabase import create_client, Client
 from docling.document_converter import DocumentConverter
+from app.core.intent import DocumentIntentAnalyzer
+from app.core.intent import QueryIntentAnalyzer
 
 load_dotenv()
 
 # ─── MODEL ROUTER ────────────────────────────────────────────────────────────
 
 def seleccionar_modelo(chars: int, tiene_tablas: bool, source_type: str) -> dict:
-    """
-    Selecciona el LLM más costo-eficiente según complejidad del documento.
-    Tier 1: Gemini 2.0 Flash    — simple, barato
-    Tier 2: Gemini 2.5 Flash    — tablas o largo
-    Tier 3: Claude Sonnet       — legal/fiscal denso
-    Tier 4: Claude Opus         — razonamiento profundo
-    """
     if chars > 100000:
         return {"modelo": "claude-opus-4-6", "tier": 4, "proveedor": "anthropic"}
     if source_type in ["pdf", "docx"] and chars > 50000:
         return {"modelo": "claude-sonnet-4-6", "tier": 3, "proveedor": "anthropic"}
     if tiene_tablas or chars > 20000:
         return {"modelo": "gemini-2.5-flash", "tier": 2, "proveedor": "google"}
-    return {"modelo": "gemini-2.0-flash", "tier": 1, "proveedor": "google"}
+    return {"modelo": "gemini-2.5-flash", "tier": 1, "proveedor": "google"}
 
 
 def enriquecer_con_llm(texto: str, entidades_raw: list, modelo_info: dict) -> list:
-    """
-    Normaliza y enriquece entidades usando el LLM seleccionado por MR.
-    Por ahora retorna las entidades tal cual — punto de extensión para Fase 2.
-    """
     print(f"  [MR] Modelo seleccionado: {modelo_info['modelo']} (Tier {modelo_info['tier']})")
     return entidades_raw
 
@@ -39,9 +30,6 @@ def enriquecer_con_llm(texto: str, entidades_raw: list, modelo_info: dict) -> li
 # ─── CLASIFICADOR DE CONTENIDO ───────────────────────────────────────────────
 
 def clasificar_documento(texto: str, source_type: str) -> dict:
-    """
-    Determina qué ramas del pipeline activar según el contenido.
-    """
     tiene_tablas = (
         "|" in texto and "\n" in texto and
         texto.count("|") > 10
@@ -64,6 +52,8 @@ class DigestInputIntelligence:
     def __init__(self):
         self.data_path = os.getenv("DATA_DIR", "./data")
         self.org_id = os.getenv("ORG_ID", "default")
+        self.intent_analyzer = DocumentIntentAnalyzer()
+        self.query_analyzer = QueryIntentAnalyzer()
 
         if not os.getenv("LANGEXTRACT_API_KEY") and os.getenv("GOOGLE_API_KEY"):
             os.environ["LANGEXTRACT_API_KEY"] = os.getenv("GOOGLE_API_KEY")
@@ -73,6 +63,7 @@ class DigestInputIntelligence:
             os.getenv("SUPABASE_KEY")
         )
         self.converter = DocumentConverter()
+        self.intent_analyzer = DocumentIntentAnalyzer()
 
     # ── Utilidades ──────────────────────────────────────────────────────────
 
@@ -94,7 +85,8 @@ class DigestInputIntelligence:
     # ── Supabase: documentos ─────────────────────────────────────────────────
 
     def _registrar_documento(self, nombre: str, source_type: str,
-                              doc_hash: str, modelo_info: dict) -> str:
+                              doc_hash: str, modelo_info: dict,
+                              doc_type: str) -> str:
         resultado = self.supabase.table("documents").insert({
             "org_id": self.org_id,
             "name": nombre,
@@ -102,7 +94,10 @@ class DigestInputIntelligence:
             "source_path": self.data_path,
             "status": "processing",
             "doc_hash": doc_hash,
-            "metadata": {"model_router": modelo_info}
+            "metadata": {
+                "model_router": modelo_info,
+                "document_type": doc_type
+            }
         }).execute()
         return resultado.data[0]["id"]
 
@@ -124,7 +119,6 @@ class DigestInputIntelligence:
                          entidad: str, valor: str) -> str | None:
         hash_entidad = self._calcular_hash(f"{entidad}:{valor.strip()}")
 
-        # IHS — deduplicación por hash
         if self._entidad_existe(hash_entidad):
             print(f"  [IHS] Duplicado ignorado: {entidad} = {valor[:40]}")
             return None
@@ -145,21 +139,23 @@ class DigestInputIntelligence:
     # ── Docling: conversión ──────────────────────────────────────────────────
 
     def _convertir_con_docling(self, ruta: str) -> str:
-        """Convierte cualquier documento a Markdown estructurado."""
         result = self.converter.convert(ruta)
         return result.document.export_to_markdown()
 
     # ── LangExtract: extracción semántica ────────────────────────────────────
 
-    def _extraer_con_langextract(self, texto: str) -> list:
+    def _extraer_con_langextract(self, texto: str,
+                                  prompt_extra: str = "") -> list:
         prompt_description = (
             "Extrae todas las entidades relevantes ÚNICAMENTE del documento proporcionado. "
             "Pueden ser nombres de personas o empresas, montos, fechas, cláusulas, "
             "productos, cantidades, lugares o cualquier dato significativo. "
             "NO uses los ejemplos como fuente de datos. "
             "Los ejemplos solo muestran el formato de extracción esperado. "
-            "Usa el texto exacto del documento sin parafrasear ni interpretar."
+            "Usa el texto exacto del documento sin parafrasear ni interpretar. "
+            f"{prompt_extra}"
         )
+
         examples = [
             lx_data.ExampleData(
                 text="Empresa ABC S.A. de C.V. adquiere servicios de Soluciones XYZ "
@@ -204,16 +200,10 @@ class DigestInputIntelligence:
     # ── LlamaIndex: extracción tabular ───────────────────────────────────────
 
     def _extraer_con_llamaindex(self, texto: str) -> list:
-        """
-        Extrae datos estructurados de tablas.
-        Por ahora parsea tablas Markdown — punto de extensión para indexación completa.
-        """
         print("  [LlamaIndex] Extrayendo datos tabulares...")
         entidades = []
-        lineas = texto.split("\n")
-
         headers = []
-        for i, linea in enumerate(lineas):
+        for linea in texto.split("\n"):
             if "|" in linea and "---" not in linea:
                 celdas = [c.strip() for c in linea.split("|") if c.strip()]
                 if not headers:
@@ -227,6 +217,18 @@ class DigestInputIntelligence:
                                 "fuente": "llamaindex"
                             })
         return entidades
+
+    # ── EDB: embeddings automáticos ──────────────────────────────────────────
+
+    def _generar_embeddings_documento(self, document_id: str):
+        """Llama a EDB para generar embeddings de todas las entidades del documento."""
+        try:
+            from app.core.edb import EntityDataBrain
+            edb = EntityDataBrain()
+            count = edb.store_document_embeddings(document_id)
+            print(f"  [EDB] {count} embeddings generados automáticamente")
+        except Exception as e:
+            print(f"  [EDB] Error generando embeddings: {e}")
 
     # ── Pipeline principal ───────────────────────────────────────────────────
 
@@ -259,49 +261,58 @@ class DigestInputIntelligence:
                 print(f"  [Docling] Error: {e}")
                 continue
 
-            # 2. Clasificador de contenido
+            # 2. Intent-A — analizar tipo de documento
+            intent_config = self.intent_analyzer.analizar(texto)
+            doc_type = intent_config["tipo"]
+            prompt_extra = intent_config["prompt_extra"]
+
+            # 3. Clasificador de contenido
             clasificacion = clasificar_documento(texto, source_type)
             print(f"  [Clasificador] tablas={clasificacion['tiene_tablas']} "
                   f"narrativo={clasificacion['es_narrativo']}")
 
-            # 3. Model Router
+            # 4. Model Router
             modelo_info = seleccionar_modelo(
                 chars=clasificacion["chars"],
                 tiene_tablas=clasificacion["tiene_tablas"],
                 source_type=source_type
             )
 
-            # 4. Registrar documento en Supabase
+            # 5. Registrar documento en Supabase
             doc_hash = self._calcular_hash(texto)
             document_id = self._registrar_documento(
                 nombre=archivo,
                 source_type=source_type,
                 doc_hash=doc_hash,
-                modelo_info=modelo_info
+                modelo_info=modelo_info,
+                doc_type=doc_type
             )
             print(f"  [DII] Documento registrado: {document_id}")
             self._registrar_audit(document_id, None, "DII",
                                   "document_registered", {
                                       "doc_hash": doc_hash,
                                       "chars": clasificacion["chars"],
-                                      "model_router": modelo_info
+                                      "model_router": modelo_info,
+                                      "document_type": doc_type
                                   })
 
-            # 5. Extracción — ramas según clasificación
+            # 6. Extracción — ramas según clasificación
             entidades_raw = []
 
             if clasificacion["usar_langextract"]:
-                entidades_raw += self._extraer_con_langextract(texto)
+                entidades_raw += self._extraer_con_langextract(
+                    texto, prompt_extra
+                )
 
             if clasificacion["usar_llamaindex"]:
                 entidades_raw += self._extraer_con_llamaindex(texto)
 
-            # 6. Model Router — enriquecimiento LLM
+            # 7. Model Router — enriquecimiento LLM
             entidades_enriquecidas = enriquecer_con_llm(
                 texto, entidades_raw, modelo_info
             )
 
-            # 7. Persistir en Supabase con IHS
+            # 8. Persistir en Supabase con IHS
             datos_finales = []
             for item in entidades_enriquecidas:
                 entity_id = self._guardar_entidad(
@@ -318,7 +329,7 @@ class DigestInputIntelligence:
                                           })
                 datos_finales.append(item)
 
-            # 8. Actualizar estado
+            # 9. Actualizar estado
             self._actualizar_estado_documento(document_id, "processed")
             self._registrar_audit(document_id, None, "DII",
                                   "document_processed", {
@@ -326,6 +337,10 @@ class DigestInputIntelligence:
                                   })
 
             print(f"  [DII] ✓ {len(datos_finales)} entidades procesadas")
+
+            # 10. EDB — generar embeddings automáticamente
+            self._generar_embeddings_documento(document_id)
+
             todos_resultados.extend(datos_finales)
 
         return todos_resultados
@@ -338,4 +353,5 @@ if __name__ == "__main__":
     print("  RESULTADO DII")
     print("=" * 60)
     for item in resultado:
-        print(f"  [{item.get('fuente','?')}] {item['entidad']}: {item['valor']}")
+        print(f"  [{item.get('fuente','?')}] "
+              f"{item['entidad']}: {item['valor']}")
