@@ -1,0 +1,24 @@
+# Entorno virtual
+venv/
+
+# Variables de entorno — NUNCA subir al repo
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Documentos de prueba privados
+data/
+
+# Mac
+.DS_Store
+
+# VSCode
+.vscode/
+
+# Logs
+*.log
