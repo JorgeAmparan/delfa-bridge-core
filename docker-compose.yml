@@ -1,0 +1,71 @@
+version: "3.9"
+
+services:
+
+  delfa-api:
+    build: .
+    container_name: delfa-bridge-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  delfa-dii:
+    build: .
+    container_name: delfa-bridge-dii
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    command: ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8001"]
+    restart: unless-stopped
+
+  delfa-edb:
+    build: .
+    container_name: delfa-bridge-edb
+    ports:
+      - "8002:8002"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    command: ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8002"]
+    restart: unless-stopped
+
+  delfa-grg:
+    build: .
+    container_name: delfa-bridge-grg
+    ports:
+      - "8003:8003"
+    env_file:
+      - .env
+    command: ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8003"]
+    restart: unless-stopped
+
+  delfa-matrix:
+    build: .
+    container_name: delfa-bridge-matrix
+    ports:
+      - "8004:8004"
+    env_file:
+      - .env
+    command: ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8004"]
+    restart: unless-stopped
+
+networks:
+  default:
+    name: delfa-network
+
+volumes:
+  data:
+    driver: local
