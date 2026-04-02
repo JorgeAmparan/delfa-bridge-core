@@ -1,0 +1,14 @@
+{
+    "mcpServers": {
+      "delfa-bridge": {
+        "command": "python3",
+        "args": ["-m", "app.mcp_server"],
+        "cwd": "/Users/jamparan/delfa-bridge-core",
+        "env": {
+          "PYTHONPATH": "/Users/jamparan/delfa-bridge-core",
+          "VIRTUAL_ENV": "/Users/jamparan/delfa-bridge-core/venv"
+        }
+      }
+    }
+  }
+  
