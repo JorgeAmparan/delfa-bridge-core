@@ -198,4 +198,100 @@ async def procesar_microsip_files(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-        
+class SQLConnectRequest(BaseModel):
+    db_type: str = "mysql"
+    host: str
+    port: int = 3306
+    database: str
+    username: str
+    password: str
+    connection_string: str = None
+
+
+class SQLQueryRequest(BaseModel):
+    db_type: str = "mysql"
+    host: str
+    port: int = 3306
+    database: str
+    username: str
+    password: str
+    tabla: str = None
+    tablas: list = None
+    limite: int = 100
+    connection_string: str = None
+
+
+@router.post("/sql/connect")
+async def test_sql_connection(
+    request: SQLConnectRequest,
+    ctx: dict = Depends(verificar_api_key)
+):
+    """Verifica conectividad a cualquier base de datos SQL."""
+    try:
+        from app.connectors.sql import SQLConnector
+        connector = SQLConnector(
+            db_type=request.db_type,
+            host=request.host,
+            port=request.port,
+            database=request.database,
+            username=request.username,
+            password=request.password,
+            connection_string=request.connection_string
+        )
+        connected = connector.conectar()
+        tablas = connector.listar_tablas() if connected else []
+        return {
+            "connected": connected,
+            "db_type": request.db_type,
+            "database": request.database,
+            "tablas": tablas
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/sql/process")
+async def procesar_sql(
+    request: SQLQueryRequest,
+    ctx: dict = Depends(verificar_api_key)
+):
+    """
+    Procesa tablas de una BD SQL a través del pipeline Panohayan™.
+    Si tabla está definida, procesa solo esa tabla.
+    Si tablas es una lista, procesa esas tablas.
+    Si ninguno está definido, procesa toda la BD.
+    """
+    try:
+        import os
+        os.environ["ORG_ID"] = ctx["org_id"]
+
+        from app.connectors.sql import SQLConnector
+        connector = SQLConnector(
+            db_type=request.db_type,
+            host=request.host,
+            port=request.port,
+            database=request.database,
+            username=request.username,
+            password=request.password,
+            connection_string=request.connection_string
+        )
+
+        if request.tabla:
+            resultado = connector.procesar_tabla(
+                tabla=request.tabla,
+                limite=request.limite,
+                org_id=ctx["org_id"]
+            )
+        else:
+            resultado = connector.procesar_base_completa(
+                tablas=request.tablas,
+                limite_por_tabla=request.limite,
+                org_id=ctx["org_id"]
+            )
+
+        return resultado
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
