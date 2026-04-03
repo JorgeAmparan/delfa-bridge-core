@@ -3,10 +3,10 @@ import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
 import jwt
 from fastapi import APIRouter, HTTPException, Security, Depends, status
 from fastapi.security import APIKeyHeader, HTTPBearer, HTTPAuthorizationCredentials
-from passlib.hash import bcrypt
 from pydantic import BaseModel, EmailStr
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -32,7 +32,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 def _supabase() -> Client:
-    return create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
+    """Cliente Supabase con service_role key — bypasea RLS para operaciones de auth."""
+    return create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
 
 
 def _hash_token(token: str) -> str:
@@ -229,7 +230,7 @@ async def register(
         role = "admin"
 
     # Crear usuario
-    password_hash = bcrypt.hash(request.password)
+    password_hash = bcrypt.hashpw(request.password.encode(), bcrypt.gensalt()).decode()
     nuevo = sb.table("users").insert({
         "org_id": org_id,
         "email": request.email,
@@ -266,7 +267,7 @@ async def login(request: LoginRequest):
     if not user["is_active"]:
         raise HTTPException(status_code=403, detail="Usuario desactivado.")
 
-    if not bcrypt.verify(request.password, user["password_hash"]):
+    if not bcrypt.checkpw(request.password.encode(), user["password_hash"].encode()):
         raise HTTPException(status_code=401, detail="Credenciales invalidas.")
 
     access_token = _create_access_token(user)
