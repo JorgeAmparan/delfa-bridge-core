@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routers import documents, search, governance, trail
 from dotenv import load_dotenv
 from app.api.routers import documents, search, governance, trail, connectors
+from app.api.routers import documents, search, governance, trail, connectors, billing
 import os
 
 load_dotenv()
@@ -30,6 +31,7 @@ app.include_router(search.router)
 app.include_router(governance.router)
 app.include_router(trail.router)
 app.include_router(connectors.router)
+app.include_router(billing.router)
 
 @app.get("/")
 async def root():
