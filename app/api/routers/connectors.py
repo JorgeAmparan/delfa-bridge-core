@@ -1031,3 +1031,282 @@ async def imap_sync(
         return connector.sincronizar(org_id=ctx["org_id"])
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── FASE 3 — MICROSOFT TEAMS ───────────────────────────────────────────────
+
+
+class TeamsRequest(BaseModel):
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
+    tenant_id: Optional[str] = None
+    team_id: Optional[str] = None
+    channel_ids: Optional[list] = None
+    max_messages: Optional[int] = 200
+
+
+@router.post("/teams/sync")
+async def teams_sync(
+    request: TeamsRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Sincroniza mensajes y archivos de canales de Microsoft Teams."""
+    try:
+        from app.connectors.teams import TeamsConnector
+        connector = TeamsConnector(
+            client_id=request.client_id,
+            client_secret=request.client_secret,
+            tenant_id=request.tenant_id,
+            team_id=request.team_id,
+            channel_ids=request.channel_ids,
+            max_messages=request.max_messages
+        )
+        return connector.sincronizar(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/teams/list")
+async def teams_list(
+    ctx: dict = Depends(requiere_rol("admin", "editor", "viewer"))
+):
+    """Lista teams accesibles."""
+    try:
+        from app.connectors.teams import TeamsConnector
+        connector = TeamsConnector()
+        if not connector.autenticar():
+            raise HTTPException(status_code=401, detail="No se pudo autenticar")
+        connector._autenticado = True
+        return {"teams": connector.listar_teams()}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/teams/channels")
+async def teams_channels(
+    team_id: str,
+    ctx: dict = Depends(requiere_rol("admin", "editor", "viewer"))
+):
+    """Lista canales de un team."""
+    try:
+        from app.connectors.teams import TeamsConnector
+        connector = TeamsConnector(team_id=team_id)
+        if not connector.autenticar():
+            raise HTTPException(status_code=401, detail="No se pudo autenticar")
+        connector._autenticado = True
+        return {"canales": connector.listar_canales()}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── FASE 3 — ERP MEXICANO: CONTPAQi ────────────────────────────────────────
+
+
+class CONTPAQiDBRequest(BaseModel):
+    dsn: Optional[str] = None
+    db_type: Optional[str] = "mssql"
+    host: Optional[str] = None
+    port: Optional[int] = 1433
+    database: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+
+
+class CONTPAQiFileRequest(BaseModel):
+    directorio: Optional[str] = None
+
+
+@router.post("/contpaqi/process")
+async def contpaqi_process(
+    request: CONTPAQiDBRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Extrae y procesa datos de CONTPAQi via conexión directa a BD."""
+    try:
+        from app.connectors.contpaqi import CONTPAQiDBConnector
+        connector = CONTPAQiDBConnector(
+            dsn=request.dsn,
+            db_type=request.db_type,
+            host=request.host,
+            port=request.port,
+            database=request.database,
+            username=request.username,
+            password=request.password
+        )
+        return connector.procesar_bd(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/contpaqi/files")
+async def contpaqi_files(
+    request: CONTPAQiFileRequest = None,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Procesa archivos exportados de CONTPAQi (XML CFDI, CSV, PDF)."""
+    try:
+        from app.connectors.contpaqi import CONTPAQiFileConnector
+        connector = CONTPAQiFileConnector(
+            directorio=request.directorio if request else None
+        )
+        return connector.procesar_directorio(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── FASE 3 — ERP MEXICANO: ASPEL ──────────────────────────────────────────
+
+
+class AspelDBRequest(BaseModel):
+    dsn: Optional[str] = None
+    db_type: Optional[str] = "mssql"
+    host: Optional[str] = None
+    port: Optional[int] = 1433
+    database: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    modulo: Optional[str] = "sae"
+
+
+class AspelFileRequest(BaseModel):
+    directorio: Optional[str] = None
+
+
+@router.post("/aspel/process")
+async def aspel_process(
+    request: AspelDBRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Extrae y procesa datos de Aspel SAE/COI via conexión directa a BD."""
+    try:
+        from app.connectors.aspel import AspelDBConnector
+        connector = AspelDBConnector(
+            dsn=request.dsn,
+            db_type=request.db_type,
+            host=request.host,
+            port=request.port,
+            database=request.database,
+            username=request.username,
+            password=request.password,
+            modulo=request.modulo
+        )
+        return connector.procesar_bd(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/aspel/files")
+async def aspel_files(
+    request: AspelFileRequest = None,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Procesa archivos exportados de Aspel (XML CFDI, CSV, PDF)."""
+    try:
+        from app.connectors.aspel import AspelFileConnector
+        connector = AspelFileConnector(
+            directorio=request.directorio if request else None
+        )
+        return connector.procesar_directorio(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── FASE 3 — SAP BUSINESS ONE ──────────────────────────────────────────────
+
+
+class SAPB1Request(BaseModel):
+    base_url: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    company: Optional[str] = None
+    objetos: Optional[dict] = None
+
+
+class SAPB1QueryRequest(BaseModel):
+    base_url: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    company: Optional[str] = None
+    query: str
+
+
+@router.post("/sapb1/sync")
+async def sapb1_sync(
+    request: SAPB1Request,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Sincroniza objetos de SAP Business One via Service Layer."""
+    try:
+        from app.connectors.sapb1 import SAPB1Connector
+        connector = SAPB1Connector(
+            base_url=request.base_url,
+            username=request.username,
+            password=request.password,
+            company=request.company,
+            objetos=request.objetos
+        )
+        return connector.sincronizar(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/sapb1/query")
+async def sapb1_query(
+    request: SAPB1QueryRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Ejecuta query SQL en SAP B1 y procesa resultado via DII."""
+    try:
+        from app.connectors.sapb1 import SAPB1Connector
+        connector = SAPB1Connector(
+            base_url=request.base_url,
+            username=request.username,
+            password=request.password,
+            company=request.company
+        )
+        return connector.ejecutar_query(
+            query=request.query, org_id=ctx["org_id"]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── FASE 3 — AGENTE ON-PREMISE ─────────────────────────────────────────────
+
+
+@router.post("/onpremise/receive")
+async def onpremise_receive(
+    request: Request,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Recibe datos desde agente on-premise en red del cliente."""
+    try:
+        payload = await request.json()
+        from app.connectors.onpremise import OnPremiseConnector
+        connector = OnPremiseConnector()
+
+        secret = request.headers.get("X-Agent-Secret", "")
+        if not connector.validar_secret(secret):
+            raise HTTPException(
+                status_code=401, detail="Invalid agent secret"
+            )
+
+        return connector.procesar(payload, org_id=ctx["org_id"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/onpremise/status")
+async def onpremise_status(
+    agent_id: str = None,
+    ctx: dict = Depends(requiere_rol("admin", "editor", "viewer"))
+):
+    """Consulta status de agentes on-premise registrados."""
+    from app.connectors.onpremise import OnPremiseConnector
+    return OnPremiseConnector.obtener_status(agent_id=agent_id)
