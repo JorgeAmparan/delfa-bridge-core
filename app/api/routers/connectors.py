@@ -534,3 +534,500 @@ async def binderp_sync(
         return connector.sincronizar(org_id=ctx["org_id"])
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── FASE 2 — GOOGLE-BASED CONNECTORS ───────────────────────────────────────
+
+
+class GmailRequest(BaseModel):
+    user_email: Optional[str] = "me"
+    query: Optional[str] = "newer_than:7d"
+    max_results: Optional[int] = 50
+
+
+@router.post("/gmail/sync")
+async def gmail_sync(
+    request: GmailRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Sincroniza correos y adjuntos de Gmail."""
+    try:
+        from app.connectors.gmail import GmailConnector
+        connector = GmailConnector(
+            user_email=request.user_email,
+            query=request.query,
+            max_results=request.max_results
+        )
+        return connector.sincronizar(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class MeetRequest(BaseModel):
+    folder_id: Optional[str] = None
+    max_results: Optional[int] = 20
+
+
+@router.post("/meet/sync")
+async def meet_sync(
+    request: MeetRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Sincroniza transcripciones de Google Meet."""
+    try:
+        from app.connectors.meet import MeetConnector
+        connector = MeetConnector(
+            folder_id=request.folder_id,
+            max_results=request.max_results
+        )
+        return connector.sincronizar(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── FASE 2 — MICROSOFT GRAPH-BASED CONNECTORS ─────────────────────────────
+
+
+class OneDriveRequest(BaseModel):
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
+    tenant_id: Optional[str] = None
+    user_id: Optional[str] = None
+    folder_path: Optional[str] = None
+
+
+@router.post("/onedrive/process")
+async def onedrive_process(
+    request: OneDriveRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Descarga y procesa archivos de OneDrive."""
+    try:
+        from app.connectors.onedrive import OneDriveConnector
+        connector = OneDriveConnector(
+            client_id=request.client_id,
+            client_secret=request.client_secret,
+            tenant_id=request.tenant_id,
+            user_id=request.user_id,
+            folder_path=request.folder_path
+        )
+        return connector.sincronizar(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/onedrive/files")
+async def onedrive_files(
+    folder_path: str = None,
+    ctx: dict = Depends(requiere_rol("admin", "editor", "viewer"))
+):
+    """Lista archivos disponibles en OneDrive."""
+    try:
+        from app.connectors.onedrive import OneDriveConnector
+        connector = OneDriveConnector(folder_path=folder_path)
+        if not connector.autenticar():
+            raise HTTPException(status_code=401, detail="No se pudo autenticar con OneDrive")
+        connector._autenticado = True
+        archivos = connector.listar_archivos()
+        return {"archivos": archivos, "total": len(archivos)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class OutlookRequest(BaseModel):
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
+    tenant_id: Optional[str] = None
+    user_id: Optional[str] = None
+    folder: Optional[str] = "inbox"
+    max_results: Optional[int] = 50
+    filter_query: Optional[str] = None
+
+
+@router.post("/outlook/sync")
+async def outlook_sync(
+    request: OutlookRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Sincroniza correos y adjuntos de Outlook/Office 365."""
+    try:
+        from app.connectors.outlook import OutlookConnector
+        connector = OutlookConnector(
+            client_id=request.client_id,
+            client_secret=request.client_secret,
+            tenant_id=request.tenant_id,
+            user_id=request.user_id,
+            folder=request.folder,
+            max_results=request.max_results,
+            filter_query=request.filter_query
+        )
+        return connector.sincronizar(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── FASE 2 — COMUNICACIÓN ──────────────────────────────────────────────────
+
+
+class SlackRequest(BaseModel):
+    bot_token: Optional[str] = None
+    channels: Optional[list] = None
+    max_messages: Optional[int] = 200
+
+
+@router.post("/slack/sync")
+async def slack_sync(
+    request: SlackRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Sincroniza mensajes de canales de Slack."""
+    try:
+        from app.connectors.slack import SlackConnector
+        connector = SlackConnector(
+            bot_token=request.bot_token,
+            channels=request.channels,
+            max_messages=request.max_messages
+        )
+        return connector.sincronizar(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/whatsapp/webhook")
+async def whatsapp_webhook(
+    request: Request,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Recibe mensajes de WhatsApp Business Cloud API."""
+    try:
+        payload = await request.json()
+        from app.connectors.whatsapp import WhatsAppConnector
+        connector = WhatsAppConnector()
+        return connector.procesar(payload, org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/whatsapp/verify")
+async def whatsapp_verify(
+    mode: str = None,
+    token: str = None,
+    challenge: str = None
+):
+    """Verificación de webhook de WhatsApp (challenge-response)."""
+    from app.connectors.whatsapp import WhatsAppConnector
+    connector = WhatsAppConnector()
+    result = connector.verificar_webhook(mode, token, challenge)
+    if result:
+        return int(result)
+    raise HTTPException(status_code=403, detail="Verification failed")
+
+
+# ─── FASE 2 — VIDEO ─────────────────────────────────────────────────────────
+
+
+class ZoomRequest(BaseModel):
+    account_id: Optional[str] = None
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
+    user_id: Optional[str] = "me"
+    days_back: Optional[int] = 7
+
+
+@router.post("/zoom/sync")
+async def zoom_sync(
+    request: ZoomRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Sincroniza transcripciones y grabaciones de Zoom."""
+    try:
+        from app.connectors.zoom import ZoomConnector
+        connector = ZoomConnector(
+            account_id=request.account_id,
+            client_id=request.client_id,
+            client_secret=request.client_secret,
+            user_id=request.user_id,
+            days_back=request.days_back
+        )
+        return connector.sincronizar(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── FASE 2 — CRM ───────────────────────────────────────────────────────────
+
+
+class SalesforceRequest(BaseModel):
+    username: Optional[str] = None
+    password: Optional[str] = None
+    security_token: Optional[str] = None
+    domain: Optional[str] = "login"
+    objetos: Optional[list] = None
+    queries: Optional[dict] = None
+
+
+class SalesforceQueryRequest(BaseModel):
+    username: Optional[str] = None
+    password: Optional[str] = None
+    security_token: Optional[str] = None
+    domain: Optional[str] = "login"
+    soql: str
+
+
+@router.post("/salesforce/sync")
+async def salesforce_sync(
+    request: SalesforceRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Sincroniza objetos de Salesforce (Account, Contact, Lead, Opportunity)."""
+    try:
+        from app.connectors.salesforce import SalesforceConnector
+        connector = SalesforceConnector(
+            username=request.username,
+            password=request.password,
+            security_token=request.security_token,
+            domain=request.domain,
+            objetos=request.objetos,
+            queries=request.queries
+        )
+        return connector.sincronizar(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/salesforce/query")
+async def salesforce_query(
+    request: SalesforceQueryRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Ejecuta una query SOQL personalizada y procesa el resultado."""
+    try:
+        from app.connectors.salesforce import SalesforceConnector
+        connector = SalesforceConnector(
+            username=request.username,
+            password=request.password,
+            security_token=request.security_token,
+            domain=request.domain
+        )
+        return connector.ejecutar_query(
+            soql=request.soql, org_id=ctx["org_id"]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class ZohoRequest(BaseModel):
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
+    refresh_token: Optional[str] = None
+    modulos: Optional[list] = None
+
+
+@router.post("/zoho/sync")
+async def zoho_sync(
+    request: ZohoRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Sincroniza módulos de Zoho CRM (Leads, Contacts, Accounts, Deals)."""
+    try:
+        from app.connectors.zoho import ZohoConnector
+        connector = ZohoConnector(
+            client_id=request.client_id,
+            client_secret=request.client_secret,
+            refresh_token=request.refresh_token,
+            modulos=request.modulos
+        )
+        return connector.sincronizar(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class OdooRequest(BaseModel):
+    url: Optional[str] = None
+    db: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    modelos: Optional[dict] = None
+
+
+@router.post("/odoo/sync")
+async def odoo_sync(
+    request: OdooRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Sincroniza modelos de Odoo (contactos, ventas, facturas, productos)."""
+    try:
+        from app.connectors.odoo import OdooConnector
+        connector = OdooConnector(
+            url=request.url,
+            db=request.db,
+            username=request.username,
+            password=request.password,
+            modelos=request.modelos
+        )
+        return connector.sincronizar(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── FASE 2 — LEGACY ────────────────────────────────────────────────────────
+
+
+class ODBCConnectRequest(BaseModel):
+    connection_string: Optional[str] = None
+    dsn: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+
+
+class ODBCQueryRequest(BaseModel):
+    connection_string: Optional[str] = None
+    dsn: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    sql: str
+    nombre: Optional[str] = "query"
+
+
+class ODBCProcessRequest(BaseModel):
+    connection_string: Optional[str] = None
+    dsn: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    tablas: Optional[list] = None
+    limite: Optional[int] = 100
+
+
+@router.post("/odbc/connect")
+async def odbc_connect(
+    request: ODBCConnectRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Verifica conectividad ODBC."""
+    try:
+        from app.connectors.odbc import ODBCConnector
+        connector = ODBCConnector(
+            connection_string=request.connection_string,
+            dsn=request.dsn,
+            username=request.username,
+            password=request.password
+        )
+        connected = connector.conectar()
+        tablas = connector.listar_tablas() if connected else []
+        return {"connected": connected, "tablas": tablas}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/odbc/query")
+async def odbc_query(
+    request: ODBCQueryRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Ejecuta query ODBC y procesa resultado via DII."""
+    try:
+        from app.connectors.odbc import ODBCConnector
+        connector = ODBCConnector(
+            connection_string=request.connection_string,
+            dsn=request.dsn,
+            username=request.username,
+            password=request.password
+        )
+        return connector.procesar_query(
+            sql=request.sql,
+            nombre=request.nombre,
+            org_id=ctx["org_id"]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/odbc/process")
+async def odbc_process(
+    request: ODBCProcessRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Procesa múltiples tablas ODBC via DII."""
+    try:
+        from app.connectors.odbc import ODBCConnector
+        connector = ODBCConnector(
+            connection_string=request.connection_string,
+            dsn=request.dsn,
+            username=request.username,
+            password=request.password
+        )
+        return connector.procesar_tablas(
+            tablas=request.tablas,
+            limite=request.limite,
+            org_id=ctx["org_id"]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class FTPRequest(BaseModel):
+    host: Optional[str] = None
+    port: Optional[int] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    protocol: Optional[str] = "ftp"
+    remote_path: Optional[str] = "/"
+    ssh_key_path: Optional[str] = None
+
+
+@router.post("/ftp/sync")
+async def ftp_sync(
+    request: FTPRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Descarga archivos de FTP/SFTP y los procesa via DII."""
+    try:
+        from app.connectors.ftp import FTPConnector
+        connector = FTPConnector(
+            host=request.host,
+            port=request.port,
+            username=request.username,
+            password=request.password,
+            protocol=request.protocol,
+            remote_path=request.remote_path,
+            ssh_key_path=request.ssh_key_path
+        )
+        return connector.sincronizar(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class IMAPRequest(BaseModel):
+    host: Optional[str] = None
+    port: Optional[int] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    use_ssl: Optional[bool] = True
+    folder: Optional[str] = "INBOX"
+    search_criteria: Optional[str] = "UNSEEN"
+    max_messages: Optional[int] = 50
+
+
+@router.post("/imap/sync")
+async def imap_sync(
+    request: IMAPRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Sincroniza correos de cualquier servidor IMAP."""
+    try:
+        from app.connectors.imap import IMAPConnector
+        connector = IMAPConnector(
+            host=request.host,
+            port=request.port,
+            username=request.username,
+            password=request.password,
+            use_ssl=request.use_ssl,
+            folder=request.folder,
+            search_criteria=request.search_criteria,
+            max_messages=request.max_messages
+        )
+        return connector.sincronizar(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -206,3 +206,9 @@ wrapt==2.1.2
 xlsxwriter==3.2.9
 yarl==1.23.0
 zstandard==0.25.0
+
+# Fase 2 — Connectors
+msal==1.31.1
+slack-sdk==3.33.5
+simple-salesforce==1.12.6
+paramiko==3.5.1
