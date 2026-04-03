@@ -13,6 +13,14 @@ from app.core.matrix import TraceabilityMatrix
 load_dotenv()
 
 
+# ─── EXTENSIONES SOPORTADAS POR DOCLING ──────────────────────────────────────
+
+EXTENSIONES_SOPORTADAS = {
+    "pdf", "docx", "doc", "xlsx", "xls", "csv",
+    "html", "htm", "txt", "png", "jpg", "jpeg",
+    "tiff", "tif", "bmp", "pptx"
+}
+
 # ─── CLASIFICADOR DE CONTENIDO ───────────────────────────────────────────────
 
 def clasificar_documento(texto: str, source_type: str) -> dict:
@@ -213,6 +221,8 @@ class DigestInputIntelligence:
         archivos = [
             f for f in os.listdir(self.data_path)
             if not f.startswith(".")
+            and os.path.isfile(os.path.join(self.data_path, f))
+            and f.rsplit(".", 1)[-1].lower() in EXTENSIONES_SOPORTADAS
         ]
 
         if not archivos:

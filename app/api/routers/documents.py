@@ -32,9 +32,9 @@ async def procesar_documento(
         shutil.copyfileobj(file.file, tmp)
         tmp_path = tmp.name
 
+    final_path = os.path.join(os.path.dirname(tmp_path), file.filename)
+
     try:
-        # Renombrar al nombre original
-        final_path = os.path.join(os.path.dirname(tmp_path), file.filename)
         os.rename(tmp_path, final_path)
 
         # Pipeline DII
@@ -70,9 +70,10 @@ async def procesar_documento(
         raise HTTPException(status_code=500, detail=str(e))
 
     finally:
-        # Limpiar archivo temporal
-        if os.path.exists(final_path):
-            os.remove(final_path)
+        # Limpiar archivos temporales
+        for path in (final_path, tmp_path):
+            if os.path.exists(path):
+                os.remove(path)
 
 
 @router.get("/")

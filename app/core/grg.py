@@ -1,4 +1,5 @@
 import os
+import time
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from app.core.matrix import TraceabilityMatrix
@@ -20,13 +21,18 @@ class GovernanceGuardrails:
             os.getenv("SUPABASE_KEY")
         )
         self._reglas_cache = None
+        self._cache_timestamp = 0
         self.tm = TraceabilityMatrix(org_id=self.org_id)
+
+    # TTL del cache en segundos
+    _CACHE_TTL = 60
 
     # ── Reglas ───────────────────────────────────────────────────────────────
 
     def _cargar_reglas(self) -> list:
-        """Carga reglas activas de la organización desde Supabase."""
-        if self._reglas_cache is not None:
+        """Carga reglas activas con cache TTL."""
+        ahora = time.time()
+        if self._reglas_cache is not None and (ahora - self._cache_timestamp) < self._CACHE_TTL:
             return self._reglas_cache
 
         resultado = self.supabase.table("governance_rules").select(
@@ -34,10 +40,12 @@ class GovernanceGuardrails:
         ).eq("org_id", self.org_id).eq("is_active", True).execute()
 
         self._reglas_cache = resultado.data
+        self._cache_timestamp = ahora
         return self._reglas_cache
 
     def _invalidar_cache(self):
         self._reglas_cache = None
+        self._cache_timestamp = 0
 
     def crear_regla(self, entity_class: str, rule_type: str,
                     action: str, condition: dict = None) -> str:
