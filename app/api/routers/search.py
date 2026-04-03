@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from app.api.auth import verificar_api_key
 from app.core.edb import EntityDataBrain
 
@@ -8,7 +8,7 @@ router = APIRouter(prefix="/search", tags=["search"])
 
 class SearchRequest(BaseModel):
     query: str
-    limit: int = 5
+    limit: int = Field(default=5, ge=1, le=100)
 
 
 @router.post("/")
@@ -20,10 +20,7 @@ async def buscar(
     Búsqueda semántica con Intent-B integrado.
     Acepta lenguaje natural y retorna entidades relevantes.
     """
-    import os
-    os.environ["ORG_ID"] = ctx["org_id"]
-
-    edb = EntityDataBrain()
+    edb = EntityDataBrain(org_id=ctx["org_id"])
     resultados = edb.search_semantic(request.query, limit=request.limit)
 
     return {

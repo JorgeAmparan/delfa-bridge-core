@@ -19,9 +19,6 @@ async def procesar_drive(
     Requiere GOOGLE_SERVICE_ACCOUNT_FILE o GOOGLE_CREDENTIALS_FILE en .env
     """
     try:
-        import os
-        os.environ["ORG_ID"] = ctx["org_id"]
-
         from app.connectors.google_drive import GoogleDriveConnector
         connector = GoogleDriveConnector()
         resumen = connector.procesar_carpeta(
@@ -70,9 +67,6 @@ async def procesar_microsip(
     Usa credenciales del .env si no se proporcionan.
     """
     try:
-        import os
-        os.environ["ORG_ID"] = ctx["org_id"]
-
         from app.connectors.microsip import MicroSipConnector
         connector = MicroSipConnector(
             base_url=request.base_url if request else None,
@@ -155,9 +149,6 @@ async def procesar_microsip_db(
 ):
     """Extrae y procesa datos directamente de la BD de MicroSip."""
     try:
-        import os
-        os.environ["ORG_ID"] = ctx["org_id"]
-
         from app.connectors.microsip import MicroSipDBConnector
         connector = MicroSipDBConnector(
             db_type=request.db_type,
@@ -186,9 +177,6 @@ async def procesar_microsip_files(
     Coloca los archivos en el directorio configurado en MICROSIP_EXPORT_DIR.
     """
     try:
-        import os
-        os.environ["ORG_ID"] = ctx["org_id"]
-
         from app.connectors.microsip import MicroSipFileConnector
         connector = MicroSipFileConnector(
             directorio=request.directorio if request else None
@@ -262,9 +250,6 @@ async def procesar_sql(
     Si ninguno está definido, procesa toda la BD.
     """
     try:
-        import os
-        os.environ["ORG_ID"] = ctx["org_id"]
-
         from app.connectors.sql import SQLConnector
         connector = SQLConnector(
             db_type=request.db_type,

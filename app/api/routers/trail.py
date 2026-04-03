@@ -11,10 +11,7 @@ async def trail_documento(
     ctx: dict = Depends(verificar_api_key)
 ):
     """Audit trail completo de un documento."""
-    import os
-    os.environ["ORG_ID"] = ctx["org_id"]
-
-    tm = TraceabilityMatrix()
+    tm = TraceabilityMatrix(org_id=ctx["org_id"])
     trail = tm.get_document_trail(document_id)
 
     if not trail:
@@ -36,10 +33,7 @@ async def actividad_reciente(
     ctx: dict = Depends(verificar_api_key)
 ):
     """Actividad reciente de la organización."""
-    import os
-    os.environ["ORG_ID"] = ctx["org_id"]
-
-    tm = TraceabilityMatrix()
+    tm = TraceabilityMatrix(org_id=ctx["org_id"])
     actividad = tm.get_recent_activity(limit=limit)
 
     return {
@@ -51,10 +45,7 @@ async def actividad_reciente(
 @router.get("/summary")
 async def resumen_actividad(ctx: dict = Depends(verificar_api_key)):
     """Resumen de actividad por componente."""
-    import os
-    os.environ["ORG_ID"] = ctx["org_id"]
-
-    tm = TraceabilityMatrix()
+    tm = TraceabilityMatrix(org_id=ctx["org_id"])
     resumen = tm.get_component_summary()
 
     return {

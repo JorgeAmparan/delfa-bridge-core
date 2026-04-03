@@ -119,8 +119,7 @@ class SQLConnector:
         import shutil
         from app.core.dii import DigestInputIntelligence
 
-        if org_id:
-            os.environ["ORG_ID"] = org_id
+        _org_id = org_id or os.getenv("ORG_ID", "default")
 
         if not self.engine and not self.conectar():
             return {"error": "No se pudo conectar a la BD"}
@@ -151,11 +150,11 @@ class SQLConnector:
             f.write(texto)
 
         try:
-            dii = DigestInputIntelligence()
+            dii = DigestInputIntelligence(org_id=_org_id)
             dii.data_path = tmp_dir
             entidades = dii.run_dii_pipeline()
 
-            tm = TraceabilityMatrix()
+            tm = TraceabilityMatrix(org_id=_org_id)
             tm.log(
                 component="DII",
                 action="sql_table_processed",

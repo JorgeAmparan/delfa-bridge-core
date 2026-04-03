@@ -1,7 +1,7 @@
 import os
 import shutil
 import tempfile
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query
 from app.api.auth import verificar_api_key
 from app.core.dii import DigestInputIntelligence
 from app.core.grg import GovernanceGuardrails
@@ -33,16 +33,12 @@ async def procesar_documento(
         tmp_path = tmp.name
 
     try:
-        # Configurar DII para usar archivo temporal
-        os.environ["DATA_DIR"] = os.path.dirname(tmp_path)
-        os.environ["ORG_ID"] = org_id
-
         # Renombrar al nombre original
         final_path = os.path.join(os.path.dirname(tmp_path), file.filename)
         os.rename(tmp_path, final_path)
 
         # Pipeline DII
-        dii = DigestInputIntelligence()
+        dii = DigestInputIntelligence(org_id=org_id)
         dii.data_path = os.path.dirname(final_path)
         entidades = dii.run_dii_pipeline()
 
@@ -60,7 +56,7 @@ async def procesar_documento(
             ).limit(1).execute()
 
             if doc.data:
-                grg = GovernanceGuardrails()
+                grg = GovernanceGuardrails(org_id=org_id)
                 resumen_grg = grg.evaluar_documento(doc.data[0]["id"])
 
         return {
@@ -80,19 +76,29 @@ async def procesar_documento(
 
 
 @router.get("/")
-async def listar_documentos(ctx: dict = Depends(verificar_api_key)):
+async def listar_documentos(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    ctx: dict = Depends(verificar_api_key)
+):
     """Lista todos los documentos de la organización."""
     supabase = create_client(
         os.getenv("SUPABASE_URL"),
         os.getenv("SUPABASE_KEY")
     )
     resultado = supabase.table("documents").select(
-        "id, name, source_type, status, processed_at, created_at, metadata"
+        "id, name, source_type, status, processed_at, created_at, metadata",
+        count="exact"
     ).eq("org_id", ctx["org_id"]).order(
         "created_at", desc=True
-    ).execute()
+    ).limit(limit).offset(offset).execute()
 
-    return {"documentos": resultado.data}
+    return {
+        "documentos": resultado.data,
+        "total": resultado.count,
+        "limit": limit,
+        "offset": offset
+    }
 
 
 @router.get("/{document_id}")

@@ -1,8 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routers import documents, search, governance, trail
 from dotenv import load_dotenv
-from app.api.routers import documents, search, governance, trail, connectors
 from app.api.routers import documents, search, governance, trail, connectors, billing
 import os
 
@@ -16,10 +14,12 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS — permite conexión desde Lovable y cualquier frontend
+# CORS — configurable via ALLOWED_ORIGINS en .env
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

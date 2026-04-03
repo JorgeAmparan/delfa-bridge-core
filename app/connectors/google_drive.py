@@ -166,8 +166,7 @@ class GoogleDriveConnector:
         from app.core.grg import GovernanceGuardrails
         from app.core.matrix import TraceabilityMatrix
 
-        if org_id:
-            os.environ["ORG_ID"] = org_id
+        _org_id = org_id or os.getenv("ORG_ID", "default")
 
         print(f"\n  [Drive] Procesando carpeta: {folder_id}")
         archivos = self.listar_archivos(folder_id=folder_id)
@@ -180,7 +179,7 @@ class GoogleDriveConnector:
             "errores": []
         }
 
-        tm = TraceabilityMatrix()
+        tm = TraceabilityMatrix(org_id=_org_id)
 
         for archivo in archivos:
             try:
@@ -195,7 +194,7 @@ class GoogleDriveConnector:
 
                 # Configurar DII para usar el archivo descargado
                 tmp_dir = os.path.dirname(tmp_path)
-                dii = DigestInputIntelligence()
+                dii = DigestInputIntelligence(org_id=_org_id)
                 dii.data_path = tmp_dir
 
                 # Pipeline DII completo
@@ -208,13 +207,13 @@ class GoogleDriveConnector:
                     os.getenv("SUPABASE_KEY")
                 )
                 doc = supabase.table("documents").select("id").eq(
-                    "org_id", os.getenv("ORG_ID", "default")
+                    "org_id", _org_id
                 ).eq(
                     "name", os.path.basename(tmp_path)
                 ).order("created_at", desc=True).limit(1).execute()
 
                 if doc.data:
-                    grg = GovernanceGuardrails()
+                    grg = GovernanceGuardrails(org_id=_org_id)
                     grg.evaluar_documento(doc.data[0]["id"])
 
                 resumen["archivos_procesados"] += 1

@@ -20,10 +20,7 @@ async def crear_regla(
     ctx: dict = Depends(verificar_api_key)
 ):
     """Crea una nueva regla de gobernanza para la organización."""
-    import os
-    os.environ["ORG_ID"] = ctx["org_id"]
-
-    grg = GovernanceGuardrails()
+    grg = GovernanceGuardrails(org_id=ctx["org_id"])
     rule_id = grg.crear_regla(
         entity_class=request.entity_class,
         rule_type=request.rule_type,

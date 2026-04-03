@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
+from app.core.matrix import TraceabilityMatrix
 
 load_dotenv()
 
@@ -12,13 +13,14 @@ class GovernanceGuardrails:
     Aprueba, marca, redacta o manda a cuarentena según políticas.
     """
 
-    def __init__(self):
-        self.org_id = os.getenv("ORG_ID", "default")
+    def __init__(self, org_id: str = None):
+        self.org_id = org_id or os.getenv("ORG_ID", "default")
         self.supabase: Client = create_client(
             os.getenv("SUPABASE_URL"),
             os.getenv("SUPABASE_KEY")
         )
         self._reglas_cache = None
+        self.tm = TraceabilityMatrix(org_id=self.org_id)
 
     # ── Reglas ───────────────────────────────────────────────────────────────
 
@@ -62,29 +64,27 @@ class GovernanceGuardrails:
         if not condicion:
             return True
 
-        # Condición por valor mínimo numérico
+        # Todas las condiciones presentes deben cumplirse (AND)
+
         if "min_value" in condicion:
             try:
                 valor_limpio = entity_value.replace(
                     "$", "").replace(",", "").replace(
                     "MXN", "").replace("USD", "").strip()
-                # Extraer primer número
                 import re
                 numeros = re.findall(r'\d+\.?\d*', valor_limpio)
-                if numeros:
-                    valor_num = float(numeros[0])
-                    if valor_num >= condicion["min_value"]:
-                        return True
+                if not numeros or float(numeros[0]) < condicion["min_value"]:
+                    return False
             except Exception:
-                pass
+                return False
 
-        # Condición por palabras clave
         if "contains" in condicion:
-            return condicion["contains"].lower() in entity_value.lower()
+            if condicion["contains"].lower() not in entity_value.lower():
+                return False
 
-        # Condición por longitud mínima
         if "min_length" in condicion:
-            return len(entity_value) >= condicion["min_length"]
+            if len(entity_value) < condicion["min_length"]:
+                return False
 
         return True
 
@@ -115,6 +115,12 @@ class GovernanceGuardrails:
                         f"Bloqueado por regla: {regla['rule_type']}"
                     )
                     self._actualizar_estado_entidad(entity_id, "quarantined")
+                    self.tm.log(component="GRG", action="blocked",
+                                entity_id=entity_id, detail={
+                                    "entity_class": entity_class,
+                                    "rule_id": rule_id,
+                                    "rule_type": regla["rule_type"]
+                                })
                     print(f"  [GRG] ❌ BLOQUEADO: {entity_class} = {entity_value[:40]}")
                     return {
                         "aprobada": False,
@@ -124,6 +130,12 @@ class GovernanceGuardrails:
                     }
 
                 elif accion == "flag":
+                    self.tm.log(component="GRG", action="flagged",
+                                entity_id=entity_id, detail={
+                                    "entity_class": entity_class,
+                                    "rule_id": rule_id,
+                                    "rule_type": regla["rule_type"]
+                                })
                     print(f"  [GRG] ⚠️  MARCADO: {entity_class} = {entity_value[:40]}")
                     return {
                         "aprobada": True,
@@ -138,6 +150,12 @@ class GovernanceGuardrails:
                         f"Requiere aprobación: {regla['rule_type']}"
                     )
                     self._actualizar_estado_entidad(entity_id, "quarantined")
+                    self.tm.log(component="GRG", action="quarantined",
+                                entity_id=entity_id, detail={
+                                    "entity_class": entity_class,
+                                    "rule_id": rule_id,
+                                    "rule_type": regla["rule_type"]
+                                })
                     print(f"  [GRG] 🔒 CUARENTENA: {entity_class} = {entity_value[:40]}")
                     return {
                         "aprobada": False,
@@ -148,6 +166,12 @@ class GovernanceGuardrails:
 
                 elif accion == "redact":
                     self._redactar_entidad(entity_id)
+                    self.tm.log(component="GRG", action="redacted",
+                                entity_id=entity_id, detail={
+                                    "entity_class": entity_class,
+                                    "rule_id": rule_id,
+                                    "rule_type": regla["rule_type"]
+                                })
                     print(f"  [GRG] 🔏 REDACTADO: {entity_class}")
                     return {
                         "aprobada": True,
@@ -229,7 +253,8 @@ class GovernanceGuardrails:
     def _redactar_entidad(self, entity_id: str):
         self.supabase.table("entities").update({
             "entity_value": "[REDACTADO]",
-            "normalized_value": "[REDACTADO]"
+            "normalized_value": "[REDACTADO]",
+            "embedding": None
         }).eq("id", entity_id).execute()
 
 

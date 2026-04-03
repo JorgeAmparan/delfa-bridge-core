@@ -188,14 +188,13 @@ class MicroSipConnector:
         from app.core.dii import DigestInputIntelligence
         from app.core.grg import GovernanceGuardrails
 
-        if org_id:
-            os.environ["ORG_ID"] = org_id
+        _org_id = org_id or os.getenv("ORG_ID", "default")
 
         if not self.login():
             return {"error": "No se pudo conectar a MicroSip"}
 
         print(f"\n  [MicroSip] Iniciando extracción ERP completa")
-        tm = TraceabilityMatrix()
+        tm = TraceabilityMatrix(org_id=_org_id)
 
         resumen = {
             "fuente": self.base_url,
@@ -229,7 +228,7 @@ class MicroSipConnector:
 
             # Pipeline DII
             try:
-                dii = DigestInputIntelligence()
+                dii = DigestInputIntelligence(org_id=_org_id)
                 dii.data_path = tmp_dir
                 entidades = dii.run_dii_pipeline()
 
@@ -240,13 +239,13 @@ class MicroSipConnector:
                     os.getenv("SUPABASE_KEY")
                 )
                 doc = supabase.table("documents").select("id").eq(
-                    "org_id", os.getenv("ORG_ID", "default")
+                    "org_id", _org_id
                 ).eq("name", f"microsip_{tipo}.txt").order(
                     "created_at", desc=True
                 ).limit(1).execute()
 
                 if doc.data:
-                    grg = GovernanceGuardrails()
+                    grg = GovernanceGuardrails(org_id=_org_id)
                     grg.evaluar_documento(doc.data[0]["id"])
 
                 resumen["entidades_totales"] += len(entidades)
@@ -478,14 +477,13 @@ class MicroSipDBConnector:
         from app.core.dii import DigestInputIntelligence
         from app.core.grg import GovernanceGuardrails
 
-        if org_id:
-            os.environ["ORG_ID"] = org_id
+        _org_id = org_id or os.getenv("ORG_ID", "default")
 
         if not self.conectar():
             return {"error": "No se pudo conectar a la BD de MicroSip"}
 
         print(f"\n  [MicroSip-DB] Iniciando extracción BD completa")
-        tm = TraceabilityMatrix()
+        tm = TraceabilityMatrix(org_id=_org_id)
 
         resumen = {
             "fuente": f"{self.db_type}://{self.host}/{self.database}",
@@ -519,7 +517,7 @@ class MicroSipDBConnector:
                 f.write(texto)
 
             try:
-                dii = DigestInputIntelligence()
+                dii = DigestInputIntelligence(org_id=_org_id)
                 dii.data_path = tmp_dir
                 entidades = dii.run_dii_pipeline()
 
@@ -652,8 +650,7 @@ class MicroSipFileConnector:
         from app.core.dii import DigestInputIntelligence
         from app.core.grg import GovernanceGuardrails
 
-        if org_id:
-            os.environ["ORG_ID"] = org_id
+        _org_id = org_id or os.getenv("ORG_ID", "default")
 
         if not os.path.exists(self.directorio):
             os.makedirs(self.directorio, exist_ok=True)
@@ -663,7 +660,7 @@ class MicroSipFileConnector:
             }
 
         print(f"\n  [MicroSip-File] Procesando: {self.directorio}")
-        tm = TraceabilityMatrix()
+        tm = TraceabilityMatrix(org_id=_org_id)
 
         resumen = {
             "directorio": self.directorio,
@@ -689,7 +686,7 @@ class MicroSipFileConnector:
                 import shutil as sh
                 sh.copy2(ruta, tmp_dir)
                 try:
-                    dii = DigestInputIntelligence()
+                    dii = DigestInputIntelligence(org_id=_org_id)
                     dii.data_path = tmp_dir
                     entidades = dii.run_dii_pipeline()
                     resumen["archivos_procesados"] += 1

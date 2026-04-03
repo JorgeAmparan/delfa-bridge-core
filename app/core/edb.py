@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 from openai import OpenAI
 from app.core.intent import QueryIntentAnalyzer
+from app.core.matrix import TraceabilityMatrix
 
 load_dotenv()
 
@@ -14,8 +15,8 @@ class EntityDataBrain:
     Persistencia y búsqueda semántica de entidades extraídas por DII.
     """
 
-    def __init__(self):
-        self.org_id = os.getenv("ORG_ID", "default")
+    def __init__(self, org_id: str = None):
+        self.org_id = org_id or os.getenv("ORG_ID", "default")
         self.supabase: Client = create_client(
             os.getenv("SUPABASE_URL"),
             os.getenv("SUPABASE_KEY")
@@ -25,6 +26,7 @@ class EntityDataBrain:
         self.embedding_model = "text-embedding-3-small"
         self.embedding_dims = 1536
         self.query_analyzer = QueryIntentAnalyzer()
+        self.tm = TraceabilityMatrix(org_id=self.org_id)
 
     # ── Embeddings ───────────────────────────────────────────────────────────
 
@@ -52,6 +54,11 @@ class EntityDataBrain:
                 "embedding": embedding
             }).eq("id", entity_id).execute()
 
+            self.tm.log(component="EDB", action="embedded",
+                        entity_id=entity_id, detail={
+                            "entity_class": entity_class,
+                            "model": self.embedding_model
+                        })
             print(f"  [EDB] Embedding guardado: {entity_class} = {entity_value[:40]}")
             return True
 
@@ -121,6 +128,14 @@ class EntityDataBrain:
             # Si el filtro deja resultados, úsalos — si no, usa todos
             if filtrados:
                 resultados = filtrados
+
+        self.tm.log(component="EDB", action="searched",
+                    detail={
+                        "query": query,
+                        "query_semantico": query_semantico,
+                        "entity_classes_filter": entity_classes,
+                        "resultados": len(resultados[:limit])
+                    })
 
         return resultados[:limit]
 

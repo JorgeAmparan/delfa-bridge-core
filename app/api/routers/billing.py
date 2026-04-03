@@ -144,6 +144,9 @@ async def webhook_stripe(request: Request):
     sig_header = request.headers.get("stripe-signature")
     webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
 
+    if not webhook_secret:
+        raise HTTPException(status_code=500, detail="STRIPE_WEBHOOK_SECRET no configurado")
+
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, webhook_secret

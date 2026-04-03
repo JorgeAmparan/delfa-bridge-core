@@ -24,12 +24,12 @@ class PanohayanOrchestrator:
     Ejecuta el pipeline completo para un conjunto de documentos.
     """
 
-    def __init__(self):
-        self.org_id = os.getenv("ORG_ID", "default")
-        self.dii = DigestInputIntelligence()
-        self.edb = EntityDataBrain()
-        self.grg = GovernanceGuardrails()
-        self.tm = TraceabilityMatrix()
+    def __init__(self, org_id: str = None):
+        self.org_id = org_id or os.getenv("ORG_ID", "default")
+        self.dii = DigestInputIntelligence(org_id=self.org_id)
+        self.edb = EntityDataBrain(org_id=self.org_id)
+        self.grg = GovernanceGuardrails(org_id=self.org_id)
+        self.tm = TraceabilityMatrix(org_id=self.org_id)
 
     def procesar_documentos(self, aplicar_grg: bool = True) -> dict:
         """

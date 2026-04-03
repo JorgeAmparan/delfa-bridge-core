@@ -102,17 +102,16 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     """Ejecuta una herramienta de Panohayan™."""
 
     org_id = os.getenv("ORG_ID", "default")
-    os.environ["ORG_ID"] = org_id
 
     if name == "search_knowledge":
         query = arguments.get("query", "")
         limit = arguments.get("limit", 5)
 
-        edb = EntityDataBrain()
+        edb = EntityDataBrain(org_id=org_id)
         resultados = edb.search_semantic(query, limit=limit)
 
         # Log en TM
-        tm = TraceabilityMatrix()
+        tm = TraceabilityMatrix(org_id=org_id)
         tm.log(
             component="MCP",
             action="searched",
@@ -137,7 +136,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     elif name == "get_document_trail":
         document_id = arguments.get("document_id", "")
 
-        tm = TraceabilityMatrix()
+        tm = TraceabilityMatrix(org_id=org_id)
         trail = tm.get_document_trail(document_id)
 
         if not trail:
@@ -185,7 +184,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         return [TextContent(type="text", text=texto)]
 
     elif name == "get_knowledge_summary":
-        edb = EntityDataBrain()
+        edb = EntityDataBrain(org_id=org_id)
         summary = edb.get_summary()
 
         texto = (

@@ -1,13 +1,14 @@
 import os
 import hashlib
+from datetime import datetime, timezone
 import langextract as lx
 from dotenv import load_dotenv
 from langextract import data as lx_data
 from supabase import create_client, Client
 from docling.document_converter import DocumentConverter
 from app.core.intent import DocumentIntentAnalyzer
-from app.core.intent import QueryIntentAnalyzer
 from app.core.mr import model_router
+from app.core.matrix import TraceabilityMatrix
 
 load_dotenv()
 
@@ -34,11 +35,9 @@ def clasificar_documento(texto: str, source_type: str) -> dict:
 # ─── DII — DIGEST INPUT INTELLIGENCE ─────────────────────────────────────────
 
 class DigestInputIntelligence:
-    def __init__(self):
+    def __init__(self, org_id: str = None):
         self.data_path = os.getenv("DATA_DIR", "./data")
-        self.org_id = os.getenv("ORG_ID", "default")
-        self.intent_analyzer = DocumentIntentAnalyzer()
-        self.query_analyzer = QueryIntentAnalyzer()
+        self.org_id = org_id or os.getenv("ORG_ID", "default")
 
         if not os.getenv("LANGEXTRACT_API_KEY") and os.getenv("GOOGLE_API_KEY"):
             os.environ["LANGEXTRACT_API_KEY"] = os.getenv("GOOGLE_API_KEY")
@@ -49,23 +48,12 @@ class DigestInputIntelligence:
         )
         self.converter = DocumentConverter()
         self.intent_analyzer = DocumentIntentAnalyzer()
+        self.tm = TraceabilityMatrix(org_id=self.org_id)
 
     # ── Utilidades ──────────────────────────────────────────────────────────
 
     def _calcular_hash(self, texto: str) -> str:
         return hashlib.sha256(texto.encode()).hexdigest()
-
-    def _registrar_audit(self, document_id: str, entity_id: str,
-                         component: str, action: str, detail: dict):
-        self.supabase.table("audit_trail").insert({
-            "org_id": self.org_id,
-            "document_id": document_id,
-            "entity_id": entity_id,
-            "component": component,
-            "action": action,
-            "actor": "system",
-            "detail": detail
-        }).execute()
 
     # ── Supabase: documentos ─────────────────────────────────────────────────
 
@@ -89,7 +77,7 @@ class DigestInputIntelligence:
     def _actualizar_estado_documento(self, document_id: str, status: str):
         self.supabase.table("documents").update({
             "status": status,
-            "processed_at": "now()"
+            "processed_at": datetime.now(timezone.utc).isoformat()
         }).eq("id", document_id).execute()
 
     # ── Supabase: entidades ──────────────────────────────────────────────────
@@ -246,6 +234,24 @@ class DigestInputIntelligence:
                 print(f"  [Docling] Error: {e}")
                 continue
 
+            if not texto.strip():
+                doc_hash = self._calcular_hash(archivo)
+                document_id = self._registrar_documento(
+                    nombre=archivo,
+                    source_type=source_type,
+                    doc_hash=doc_hash,
+                    modelo_info={"tier": 0, "modelo": "none", "descripcion": "Documento vacío"},
+                    doc_type="unknown"
+                )
+                self._actualizar_estado_documento(document_id, "failed")
+                self.tm.log(component="DII", action="document_failed",
+                            document_id=document_id, detail={
+                                "reason": "empty_text_after_docling",
+                                "file": archivo
+                            })
+                print(f"  [Docling] Documento vacío — omitiendo: {archivo}")
+                continue
+
             # 2. Intent-A — analizar tipo de documento
             intent_config = self.intent_analyzer.analizar(texto)
             doc_type = intent_config["tipo"]
@@ -267,6 +273,21 @@ class DigestInputIntelligence:
 
             # 5. Registrar documento en Supabase
             doc_hash = self._calcular_hash(texto)
+
+            doc_existente = self.supabase.table("documents").select("id").eq(
+                "doc_hash", doc_hash
+            ).eq("org_id", self.org_id).execute()
+
+            if doc_existente.data:
+                self.tm.log(component="DII", action="document_duplicate",
+                            document_id=doc_existente.data[0]["id"], detail={
+                                "reason": "duplicate_hash",
+                                "file": archivo,
+                                "existing_id": doc_existente.data[0]["id"]
+                            })
+                print(f"  [IHS] Documento duplicado ignorado: {archivo}")
+                continue
+
             document_id = self._registrar_documento(
                 nombre=archivo,
                 source_type=source_type,
@@ -275,13 +296,13 @@ class DigestInputIntelligence:
                 doc_type=doc_type
             )
             print(f"  [DII] Documento registrado: {document_id}")
-            self._registrar_audit(document_id, None, "DII",
-                                  "document_registered", {
-                                      "doc_hash": doc_hash,
-                                      "chars": clasificacion["chars"],
-                                      "model_router": modelo_info,
-                                      "document_type": doc_type
-                                  })
+            self.tm.log(component="DII", action="document_registered",
+                        document_id=document_id, detail={
+                            "doc_hash": doc_hash,
+                            "chars": clasificacion["chars"],
+                            "model_router": modelo_info,
+                            "document_type": doc_type
+                        })
 
             # 6. Extracción — ramas según clasificación
             entidades_raw = []
@@ -306,20 +327,21 @@ class DigestInputIntelligence:
                     valor=item["valor"]
                 )
                 if entity_id:
-                    self._registrar_audit(document_id, entity_id, "DII",
-                                          "extracted", {
-                                              "entity_class": item["entidad"],
-                                              "entity_value": item["valor"],
-                                              "fuente": item.get("fuente", "unknown")
-                                          })
+                    self.tm.log(component="DII", action="extracted",
+                                document_id=document_id, entity_id=entity_id,
+                                detail={
+                                    "entity_class": item["entidad"],
+                                    "entity_value": item["valor"],
+                                    "fuente": item.get("fuente", "unknown")
+                                })
                 datos_finales.append(item)
 
             # 9. Actualizar estado
             self._actualizar_estado_documento(document_id, "processed")
-            self._registrar_audit(document_id, None, "DII",
-                                  "document_processed", {
-                                      "total_entities": len(datos_finales)
-                                  })
+            self.tm.log(component="DII", action="document_processed",
+                        document_id=document_id, detail={
+                            "total_entities": len(datos_finales)
+                        })
 
             print(f"  [DII] ✓ {len(datos_finales)} entidades procesadas")
 

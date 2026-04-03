@@ -35,8 +35,8 @@ class TraceabilityMatrix:
         "intent_analyzed"
     ]
 
-    def __init__(self):
-        self.org_id = os.getenv("ORG_ID", "default")
+    def __init__(self, org_id: str = None):
+        self.org_id = org_id or os.getenv("ORG_ID", "default")
         self.supabase: Client = create_client(
             os.getenv("SUPABASE_URL"),
             os.getenv("SUPABASE_KEY")
