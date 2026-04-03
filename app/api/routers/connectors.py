@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from app.api.auth import verificar_api_key
+from app.api.auth import requiere_rol
 
 router = APIRouter(prefix="/connectors", tags=["connectors"])
 
@@ -12,7 +12,7 @@ class DriveRequest(BaseModel):
 @router.post("/drive/process")
 async def procesar_drive(
     request: DriveRequest,
-    ctx: dict = Depends(verificar_api_key)
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
 ):
     """
     Procesa todos los documentos de una carpeta de Google Drive.
@@ -36,7 +36,7 @@ async def procesar_drive(
 @router.get("/drive/files")
 async def listar_drive(
     folder_id: str = None,
-    ctx: dict = Depends(verificar_api_key)
+    ctx: dict = Depends(requiere_rol("admin", "editor", "viewer"))
 ):
     """Lista archivos disponibles en Google Drive."""
     try:
@@ -60,7 +60,7 @@ class MicroSipRequest(BaseModel):
 @router.post("/microsip/process")
 async def procesar_microsip(
     request: MicroSipRequest = None,
-    ctx: dict = Depends(verificar_api_key)
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
 ):
     """
     Extrae y procesa datos de MicroSip ERP via API REST.
@@ -84,7 +84,7 @@ async def procesar_microsip(
 @router.post("/microsip/login")
 async def test_microsip_login(
     request: MicroSipRequest,
-    ctx: dict = Depends(verificar_api_key)
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
 ):
     """Verifica conectividad con MicroSip ERP."""
     try:
@@ -116,7 +116,7 @@ class MicroSipDBRequest(BaseModel):
 @router.post("/microsip/db/connect")
 async def test_microsip_db(
     request: MicroSipDBRequest,
-    ctx: dict = Depends(verificar_api_key)
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
 ):
     """Verifica conectividad directa a la BD de MicroSip."""
     try:
@@ -145,7 +145,7 @@ async def test_microsip_db(
 @router.post("/microsip/db/process")
 async def procesar_microsip_db(
     request: MicroSipDBRequest,
-    ctx: dict = Depends(verificar_api_key)
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
 ):
     """Extrae y procesa datos directamente de la BD de MicroSip."""
     try:
@@ -170,7 +170,7 @@ class MicroSipFileRequest(BaseModel):
 @router.post("/microsip/files/process")
 async def procesar_microsip_files(
     request: MicroSipFileRequest = None,
-    ctx: dict = Depends(verificar_api_key)
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
 ):
     """
     Procesa archivos exportados de MicroSip (XML CFDI, CSV, PDF).
@@ -212,7 +212,7 @@ class SQLQueryRequest(BaseModel):
 @router.post("/sql/connect")
 async def test_sql_connection(
     request: SQLConnectRequest,
-    ctx: dict = Depends(verificar_api_key)
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
 ):
     """Verifica conectividad a cualquier base de datos SQL."""
     try:
@@ -241,7 +241,7 @@ async def test_sql_connection(
 @router.post("/sql/process")
 async def procesar_sql(
     request: SQLQueryRequest,
-    ctx: dict = Depends(verificar_api_key)
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
 ):
     """
     Procesa tablas de una BD SQL a través del pipeline Panohayan™.

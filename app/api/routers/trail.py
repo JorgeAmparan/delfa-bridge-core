@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.api.auth import verificar_api_key
+from app.api.auth import requiere_rol
 from app.core.matrix import TraceabilityMatrix
 
 router = APIRouter(prefix="/trail", tags=["trail"])
@@ -8,7 +8,7 @@ router = APIRouter(prefix="/trail", tags=["trail"])
 @router.get("/document/{document_id}")
 async def trail_documento(
     document_id: str,
-    ctx: dict = Depends(verificar_api_key)
+    ctx: dict = Depends(requiere_rol("admin", "editor", "viewer"))
 ):
     """Audit trail completo de un documento."""
     tm = TraceabilityMatrix(org_id=ctx["org_id"])
@@ -30,7 +30,7 @@ async def trail_documento(
 @router.get("/recent")
 async def actividad_reciente(
     limit: int = 20,
-    ctx: dict = Depends(verificar_api_key)
+    ctx: dict = Depends(requiere_rol("admin", "editor", "viewer"))
 ):
     """Actividad reciente de la organización."""
     tm = TraceabilityMatrix(org_id=ctx["org_id"])
@@ -43,7 +43,7 @@ async def actividad_reciente(
 
 
 @router.get("/summary")
-async def resumen_actividad(ctx: dict = Depends(verificar_api_key)):
+async def resumen_actividad(ctx: dict = Depends(requiere_rol("admin", "editor", "viewer"))):
     """Resumen de actividad por componente."""
     tm = TraceabilityMatrix(org_id=ctx["org_id"])
     resumen = tm.get_component_summary()

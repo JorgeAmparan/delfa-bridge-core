@@ -2,7 +2,7 @@ import os
 import shutil
 import tempfile
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query
-from app.api.auth import verificar_api_key
+from app.api.auth import requiere_rol
 from app.core.dii import DigestInputIntelligence
 from app.core.grg import GovernanceGuardrails
 from app.core.matrix import TraceabilityMatrix
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 async def procesar_documento(
     file: UploadFile = File(...),
     aplicar_grg: bool = True,
-    ctx: dict = Depends(verificar_api_key)
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
 ):
     """
     Sube y procesa un documento a través del pipeline Panohayan completo.
@@ -80,7 +80,7 @@ async def procesar_documento(
 async def listar_documentos(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
-    ctx: dict = Depends(verificar_api_key)
+    ctx: dict = Depends(requiere_rol("admin", "editor", "viewer"))
 ):
     """Lista todos los documentos de la organización."""
     supabase = create_client(
@@ -105,7 +105,7 @@ async def listar_documentos(
 @router.get("/{document_id}")
 async def detalle_documento(
     document_id: str,
-    ctx: dict = Depends(verificar_api_key)
+    ctx: dict = Depends(requiere_rol("admin", "editor", "viewer"))
 ):
     """Detalle de un documento con sus entidades."""
     supabase = create_client(

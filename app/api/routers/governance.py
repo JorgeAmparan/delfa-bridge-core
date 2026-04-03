@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import Optional
-from app.api.auth import verificar_api_key
+from app.api.auth import requiere_rol
 from app.core.grg import GovernanceGuardrails
 
 router = APIRouter(prefix="/governance", tags=["governance"])
@@ -17,7 +17,7 @@ class ReglaRequest(BaseModel):
 @router.post("/rules")
 async def crear_regla(
     request: ReglaRequest,
-    ctx: dict = Depends(verificar_api_key)
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
 ):
     """Crea una nueva regla de gobernanza para la organización."""
     grg = GovernanceGuardrails(org_id=ctx["org_id"])
@@ -37,7 +37,7 @@ async def crear_regla(
 
 
 @router.get("/rules")
-async def listar_reglas(ctx: dict = Depends(verificar_api_key)):
+async def listar_reglas(ctx: dict = Depends(requiere_rol("admin", "editor", "viewer"))):
     """Lista todas las reglas activas de la organización."""
     from supabase import create_client
     from dotenv import load_dotenv

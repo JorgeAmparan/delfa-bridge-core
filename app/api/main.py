@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from app.api.routers import documents, search, governance, trail, connectors, billing
+from app.api.auth import router as auth_router
 import os
 
 load_dotenv()
@@ -26,6 +27,7 @@ app.add_middleware(
 )
 
 # Routers
+app.include_router(auth_router)
 app.include_router(documents.router)
 app.include_router(search.router)
 app.include_router(governance.router)

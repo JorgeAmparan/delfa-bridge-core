@@ -2,7 +2,7 @@ import os
 import stripe
 from fastapi import APIRouter, HTTPException, Request, Depends
 from pydantic import BaseModel
-from app.api.auth import verificar_api_key
+from app.api.auth import requiere_rol
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -70,7 +70,7 @@ async def listar_planes():
 
 
 @router.post("/checkout")
-async def crear_checkout(request: CheckoutRequest):
+async def crear_checkout(request: CheckoutRequest, ctx: dict = Depends(requiere_rol("admin"))):
     """
     Crea una sesión de checkout en Stripe.
     Retorna URL para redirigir al usuario al pago.
@@ -117,7 +117,7 @@ async def crear_checkout(request: CheckoutRequest):
 
 
 @router.post("/portal")
-async def portal_cliente(request: PortalRequest):
+async def portal_cliente(request: PortalRequest, ctx: dict = Depends(requiere_rol("admin"))):
     """
     Crea sesión del portal de cliente Stripe.
     Permite al cliente gestionar su suscripción, facturas y método de pago.

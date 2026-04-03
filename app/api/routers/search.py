@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
-from app.api.auth import verificar_api_key
+from app.api.auth import requiere_rol
 from app.core.edb import EntityDataBrain
 
 router = APIRouter(prefix="/search", tags=["search"])
@@ -14,7 +14,7 @@ class SearchRequest(BaseModel):
 @router.post("/")
 async def buscar(
     request: SearchRequest,
-    ctx: dict = Depends(verificar_api_key)
+    ctx: dict = Depends(requiere_rol("admin", "editor", "viewer"))
 ):
     """
     Búsqueda semántica con Intent-B integrado.
