@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
+from typing import Optional
 from app.api.auth import requiere_rol
 
 router = APIRouter(prefix="/connectors", tags=["connectors"])
@@ -280,3 +281,256 @@ async def procesar_sql(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ─── WEBHOOK-BASED CONNECTORS ───────────────────────────────────────────────
+
+
+class WebhookPayload(BaseModel):
+    data: Optional[dict] = None
+    text: Optional[str] = None
+    content: Optional[str] = None
+    body: Optional[str] = None
+    message: Optional[str] = None
+    files: Optional[list] = None
+    attachments: Optional[list] = None
+
+    class Config:
+        extra = "allow"
+
+
+def _webhook_endpoint(connector_class, payload: dict, secret: str,
+                      org_id: str):
+    """Helper para todos los endpoints webhook."""
+    connector = connector_class()
+    if not connector.validar_secret(secret):
+        raise HTTPException(status_code=401, detail="Invalid webhook secret")
+    return connector.procesar(payload, org_id=org_id)
+
+
+@router.post("/webhook/receive")
+async def webhook_generico(
+    request: Request,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Webhook genérico — recibe cualquier payload JSON."""
+    try:
+        payload = await request.json()
+        from app.connectors.webhook import GenericWebhookConnector
+        connector = GenericWebhookConnector()
+        secret = request.headers.get("X-Webhook-Secret", "")
+        if not connector.validar_secret(secret):
+            raise HTTPException(
+                status_code=401, detail="Invalid webhook secret"
+            )
+        return connector.procesar(payload, org_id=ctx["org_id"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/make/webhook")
+async def make_webhook(
+    request: Request,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Recibe datos desde escenarios de Make (Integromat)."""
+    try:
+        payload = await request.json()
+        from app.connectors.make import MakeConnector
+        connector = MakeConnector()
+        secret = request.headers.get("X-Webhook-Secret", "")
+        if not connector.validar_secret(secret):
+            raise HTTPException(
+                status_code=401, detail="Invalid webhook secret"
+            )
+        return connector.procesar(payload, org_id=ctx["org_id"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/zapier/webhook")
+async def zapier_webhook(
+    request: Request,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Recibe datos desde Zaps de Zapier."""
+    try:
+        payload = await request.json()
+        from app.connectors.zapier import ZapierConnector
+        connector = ZapierConnector()
+        secret = request.headers.get("X-Webhook-Secret", "")
+        if not connector.validar_secret(secret):
+            raise HTTPException(
+                status_code=401, detail="Invalid webhook secret"
+            )
+        return connector.procesar(payload, org_id=ctx["org_id"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/n8n/webhook")
+async def n8n_webhook(
+    request: Request,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Recibe datos desde workflows de n8n."""
+    try:
+        payload = await request.json()
+        from app.connectors.n8n import N8nConnector
+        connector = N8nConnector()
+        secret = request.headers.get("X-Webhook-Secret", "")
+        if not connector.validar_secret(secret):
+            raise HTTPException(
+                status_code=401, detail="Invalid webhook secret"
+            )
+        return connector.procesar(payload, org_id=ctx["org_id"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/bubble/process")
+async def bubble_process(
+    request: Request,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Recibe datos desde apps Bubble.io."""
+    try:
+        payload = await request.json()
+        from app.connectors.bubble import BubbleConnector
+        connector = BubbleConnector()
+        return connector.procesar(payload, org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/lovable/process")
+async def lovable_process(
+    request: Request,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Recibe datos desde apps generadas con Lovable."""
+    try:
+        payload = await request.json()
+        from app.connectors.lovable import LovableConnector
+        connector = LovableConnector()
+        return connector.procesar(payload, org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/chrome-ext/process")
+async def chrome_ext_process(
+    request: Request,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Recibe datos capturados por la extensión de Chrome."""
+    try:
+        payload = await request.json()
+        from app.connectors.chrome_ext import ChromeExtConnector
+        connector = ChromeExtConnector()
+        return connector.procesar(payload, org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── API-BASED CONNECTORS ───────────────────────────────────────────────────
+
+
+class NotionRequest(BaseModel):
+    token: Optional[str] = None
+    database_ids: Optional[list] = None
+    page_ids: Optional[list] = None
+
+
+@router.post("/notion/sync")
+async def notion_sync(
+    request: NotionRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Sincroniza páginas y bases de datos de Notion."""
+    try:
+        from app.connectors.notion import NotionConnector
+        connector = NotionConnector(
+            token=request.token,
+            database_ids=request.database_ids or [],
+            page_ids=request.page_ids or []
+        )
+        return connector.sincronizar(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class HubSpotRequest(BaseModel):
+    api_key: Optional[str] = None
+    objetos: Optional[list] = None
+
+
+@router.post("/hubspot/sync")
+async def hubspot_sync(
+    request: HubSpotRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Sincroniza contactos, deals y companies de HubSpot."""
+    try:
+        from app.connectors.hubspot import HubSpotConnector
+        connector = HubSpotConnector(
+            api_key=request.api_key,
+            objetos=request.objetos
+        )
+        return connector.sincronizar(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class PipedriveRequest(BaseModel):
+    api_token: Optional[str] = None
+    domain: Optional[str] = None
+    objetos: Optional[list] = None
+
+
+@router.post("/pipedrive/sync")
+async def pipedrive_sync(
+    request: PipedriveRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Sincroniza deals, persons y organizations de Pipedrive."""
+    try:
+        from app.connectors.pipedrive import PipedriveConnector
+        connector = PipedriveConnector(
+            api_token=request.api_token,
+            domain=request.domain,
+            objetos=request.objetos
+        )
+        return connector.sincronizar(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class BindERPRequest(BaseModel):
+    api_key: Optional[str] = None
+    base_url: Optional[str] = None
+    objetos: Optional[list] = None
+
+
+@router.post("/binderp/sync")
+async def binderp_sync(
+    request: BindERPRequest,
+    ctx: dict = Depends(requiere_rol("admin", "editor"))
+):
+    """Sincroniza facturas, clientes, productos e inventario de Bind ERP."""
+    try:
+        from app.connectors.binderp import BindERPConnector
+        connector = BindERPConnector(
+            api_key=request.api_key,
+            base_url=request.base_url,
+            objetos=request.objetos
+        )
+        return connector.sincronizar(org_id=ctx["org_id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
