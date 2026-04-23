@@ -18,7 +18,8 @@ RUN sed -i '/pyobjc/d' requirements.txt && \
     sed -i '/ocrmac/d' requirements.txt && \
     sed -i '/^torch==/d' requirements.txt && \
     sed -i '/^torchvision==/d' requirements.txt && \
-    sed -i '/^pyodbc==/d' requirements.txt
+    sed -i '/^pyodbc==/d' requirements.txt && \
+    sed -i '/^cryptography==/d' requirements.txt
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
