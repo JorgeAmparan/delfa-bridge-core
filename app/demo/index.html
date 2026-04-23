@@ -622,8 +622,14 @@ tbody tr:hover { background: rgba(15,29,50,0.5); }
       <input type="password" id="loginPassword" value="Test12345" placeholder="Password">
     </div>
     <button class="btn btn-primary btn-full" id="loginBtn" onclick="doLogin()">Iniciar sesi&oacute;n</button>
-    <p style="text-align:center;margin-top:16px;font-size:11px;color:var(--text-muted)">
-      Demo &mdash; credenciales prellenadas
+    <div style="display:flex;align-items:center;gap:12px;margin-top:20px;">
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+      <span style="font-size:11px;color:var(--text-muted);">o</span>
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+    </div>
+    <button class="btn btn-secondary btn-full" style="margin-top:16px;" onclick="demoAccess()">Acceso Demo (API Key)</button>
+    <p style="text-align:center;margin-top:12px;font-size:11px;color:var(--text-muted)">
+      El acceso demo usa API Key sin necesidad de cuenta
     </p>
   </div>
 </div>
@@ -918,6 +924,12 @@ async function doLogin() {
     btn.disabled = false;
     btn.textContent = 'Iniciar sesión';
   }
+}
+
+function demoAccess() {
+  token = null;
+  currentUser = { name: 'Demo User', email: 'demo@delfa.bridge', role: 'admin' };
+  showApp();
 }
 
 function doLogout() {
@@ -1322,6 +1334,21 @@ function formatDetail(detail) {
 document.getElementById('loginPassword').addEventListener('keydown', e => {
   if (e.key === 'Enter') doLogin();
 });
+
+(async function checkApi() {
+  try {
+    const r = await fetch(API + '/health');
+    if (r.ok) {
+      document.getElementById('apiStatus').textContent = 'API conectada';
+    } else {
+      document.getElementById('apiStatus').textContent = 'API error';
+      document.querySelector('.sidebar-footer .dot').style.background = 'var(--red)';
+    }
+  } catch {
+    document.getElementById('apiStatus').textContent = 'API sin conexión';
+    document.querySelector('.sidebar-footer .dot').style.background = 'var(--red)';
+  }
+})();
 </script>
 </body>
 </html>
