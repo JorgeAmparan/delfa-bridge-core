@@ -41,13 +41,13 @@ class EntityDataBrain:
     # ── Store ─────────────────────────────────────────────────────────────────
 
     def store_embedding(self, entity_id: str, entity_class: str,
-                        entity_value: str) -> bool:
+                        entity_value: str, data_text: str = None) -> bool:
         """
         Genera embedding y lo persiste en la entidad existente.
-        Llamar después de que DII guarda la entidad en Supabase.
+        Usa data_text (oración contextual) como input si está disponible.
         """
         try:
-            texto_para_embedding = f"{entity_class}: {entity_value}"
+            texto_para_embedding = data_text or f"{entity_class}: {entity_value}"
             embedding = self._generar_embedding(texto_para_embedding)
 
             self.supabase.table("entities").update({
@@ -72,7 +72,7 @@ class EntityDataBrain:
         Útil para procesar en batch después de DII.
         """
         resultado = self.supabase.table("entities").select(
-            "id, entity_class, entity_value"
+            "id, entity_class, entity_value, data_text"
         ).eq("document_id", document_id).eq(
             "org_id", self.org_id
         ).is_("embedding", "null").execute()
@@ -84,7 +84,8 @@ class EntityDataBrain:
             ok = self.store_embedding(
                 entity_id=entidad["id"],
                 entity_class=entidad["entity_class"],
-                entity_value=entidad["entity_value"]
+                entity_value=entidad["entity_value"],
+                data_text=entidad.get("data_text")
             )
             if ok:
                 count += 1
@@ -118,6 +119,20 @@ class EntityDataBrain:
         }).execute()
 
         resultados = resultado.data
+
+        # Enriquecer resultados con campos extendidos
+        if resultados:
+            entity_ids = [r["id"] for r in resultados]
+            extra = self.supabase.table("entities").select(
+                "id, entity_type, data_text, knowledge_triple, document_id"
+            ).in_("id", entity_ids).execute()
+            extra_map = {e["id"]: e for e in extra.data}
+            for r in resultados:
+                ed = extra_map.get(r["id"], {})
+                r["entity_type"] = ed.get("entity_type")
+                r["data_text"] = ed.get("data_text")
+                r["knowledge_triple"] = ed.get("knowledge_triple")
+                r["document_id"] = ed.get("document_id")
 
         # Filtrar por entity_classes si Intent-B identificó clases relevantes
         if entity_classes:

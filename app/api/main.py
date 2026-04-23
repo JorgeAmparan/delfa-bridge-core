@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
-from app.api.routers import documents, search, governance, trail, connectors, billing
+from app.api.routers import documents, search, governance, trail, connectors, billing, chat
 from app.api.auth import router as auth_router
 import os
 
@@ -34,6 +35,7 @@ app.include_router(governance.router)
 app.include_router(trail.router)
 app.include_router(connectors.router)
 app.include_router(billing.router)
+app.include_router(chat.router)
 
 @app.get("/")
 async def root():
@@ -49,4 +51,10 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy", "org": os.getenv("ORG_ID")}
+
+
+@app.get("/demo")
+async def demo_portal():
+    demo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "demo", "index.html")
+    return FileResponse(demo_path, media_type="text/html")
 

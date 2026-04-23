@@ -15,7 +15,7 @@ class TraceabilityMatrix:
     """
 
     # Componentes válidos
-    COMPONENTES = ["DII", "EDB", "GRG", "TM", "MR", "API", "INTENT"]
+    COMPONENTES = ["DII", "EDB", "GRG", "TM", "MR", "API", "INTENT", "RI"]
 
     # Acciones válidas
     ACCIONES = [
@@ -32,7 +32,8 @@ class TraceabilityMatrix:
         "redacted",
         "resolved",
         "api_call",
-        "intent_analyzed"
+        "intent_analyzed",
+        "response_generated"
     ]
 
     def __init__(self, org_id: str = None):

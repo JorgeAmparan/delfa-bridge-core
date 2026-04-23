@@ -1,10 +1,12 @@
 import os
+import json
 import hashlib
 from datetime import datetime, timezone
 import langextract as lx
 from dotenv import load_dotenv
 from langextract import data as lx_data
 from supabase import create_client, Client
+from google import genai
 from docling.document_converter import DocumentConverter
 from app.core.intent import DocumentIntentAnalyzer
 from app.core.mr import model_router
@@ -97,7 +99,10 @@ class DigestInputIntelligence:
         return len(resultado.data) > 0
 
     def _guardar_entidad(self, document_id: str,
-                         entidad: str, valor: str) -> str | None:
+                         entidad: str, valor: str,
+                         entity_type: str = None,
+                         data_text: str = None,
+                         knowledge_triple: dict = None) -> str | None:
         hash_entidad = self._calcular_hash(f"{entidad}:{valor.strip()}")
 
         if self._entidad_existe(hash_entidad):
@@ -112,7 +117,10 @@ class DigestInputIntelligence:
             "normalized_value": valor.strip(),
             "hash": hash_entidad,
             "confidence": 1.0,
-            "status": "active"
+            "status": "active",
+            "entity_type": entity_type or "otro",
+            "data_text": data_text or f"{entidad}: {valor}",
+            "knowledge_triple": knowledge_triple or {}
         }).execute()
 
         return resultado.data[0]["id"]
@@ -198,6 +206,65 @@ class DigestInputIntelligence:
                                 "fuente": "llamaindex"
                             })
         return entidades
+
+    # ── Model Router: enriquecimiento LLM ──────────────────────────────────
+
+    def _enriquecer_entidades(self, entidades_raw: list,
+                               texto_documento: str) -> list:
+        if not entidades_raw:
+            return entidades_raw
+
+        lista = "\n".join([
+            f"{i+1}. [{e['entidad']}] {e['valor']}"
+            for i, e in enumerate(entidades_raw)
+        ])
+
+        prompt = (
+            "Analiza las siguientes entidades extraídas de un documento y para cada una genera:\n"
+            "1. entity_type: categoría semántica (persona, organización, monto, fecha, cláusula, "
+            "ubicación, producto, servicio, porcentaje, plazo, condición, referencia, otro)\n"
+            "2. data_text: oración completa que describe la entidad en su contexto documental "
+            "(será usada para búsqueda semántica, debe ser descriptiva y autocontenida)\n"
+            "3. knowledge_triple: triplo sujeto-predicado-objeto que capture la relación implícita\n\n"
+            f"Entidades:\n{lista}\n\n"
+            f"Contexto del documento (fragmento):\n{texto_documento[:3000]}\n\n"
+            'Responde EXCLUSIVAMENTE en JSON array, sin markdown ni explicaciones:\n'
+            '[{"index": 1, "entity_type": "...", "data_text": "...", '
+            '"knowledge_triple": {"subject": "...", "predicate": "...", "object": "..."}}]'
+        )
+
+        try:
+            print("  [MR] Enriqueciendo entidades con LLM...")
+            client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+            response = client.models.generate_content(
+                model="gemini-2.5-flash", contents=prompt
+            )
+            texto_resp = response.text.strip()
+            if texto_resp.startswith("```"):
+                texto_resp = texto_resp.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+            enrichments = json.loads(texto_resp)
+
+            for enr in enrichments:
+                idx = enr.get("index", 0) - 1
+                if 0 <= idx < len(entidades_raw):
+                    entidades_raw[idx]["entity_type"] = enr.get("entity_type", "otro")
+                    entidades_raw[idx]["data_text"] = enr.get("data_text", "")
+                    entidades_raw[idx]["knowledge_triple"] = enr.get("knowledge_triple", {})
+
+            print(f"  [MR] {len(enrichments)} entidades enriquecidas")
+
+        except Exception as e:
+            print(f"  [MR] Error en enriquecimiento: {e} — usando fallback")
+
+        for item in entidades_raw:
+            if "entity_type" not in item:
+                item["entity_type"] = "otro"
+            if "data_text" not in item:
+                item["data_text"] = f"{item['entidad']}: {item['valor']}"
+            if "knowledge_triple" not in item:
+                item["knowledge_triple"] = {}
+
+        return entidades_raw
 
     # ── EDB: embeddings automáticos ──────────────────────────────────────────
 
@@ -326,7 +393,9 @@ class DigestInputIntelligence:
                 entidades_raw += self._extraer_con_llamaindex(texto)
 
             # 7. Model Router — enriquecimiento LLM
-            entidades_enriquecidas = entidades_raw
+            entidades_enriquecidas = self._enriquecer_entidades(
+                entidades_raw, texto
+            )
 
             # 8. Persistir en Supabase con IHS
             datos_finales = []
@@ -334,7 +403,10 @@ class DigestInputIntelligence:
                 entity_id = self._guardar_entidad(
                     document_id=document_id,
                     entidad=item["entidad"],
-                    valor=item["valor"]
+                    valor=item["valor"],
+                    entity_type=item.get("entity_type"),
+                    data_text=item.get("data_text"),
+                    knowledge_triple=item.get("knowledge_triple")
                 )
                 if entity_id:
                     self.tm.log(component="DII", action="extracted",

@@ -14,12 +14,13 @@ desarrollado por **Jorge Luis Amparán Hernández (Lappicero Studio)** para el c
 - **Entorno virtual:** `venv/` — activar con `source venv/bin/activate`
 
 ## ARQUITECTURA PANOHAYAN™
-Panohayan™ tiene 4 pilares externos + 1 subcomponente interno:
+Panohayan™ tiene 5 pilares externos + 1 subcomponente interno:
 
 ```
 DII  → Digest Input Intelligence (con Model Router interno)
 EDB  → Entity Data Brain Lite (Supabase + pgvector)
 GRG  → Governance Guardrails
+RI   → Response Intelligence (síntesis de respuestas)
 TM   → Traceability Matrix (audit trail)
 [MR] → Model Router (subcomponente de DII)
 ```
@@ -49,6 +50,25 @@ EDB Lite (Supabase) — persistencia
 TM (audit_trail) — trazabilidad completa
 ```
 
+## PIPELINE RI (SALIDA)
+```
+Consulta del usuario (lenguaje natural)
+    ↓
+EDB — Intent-B analiza intención, busca por similitud vectorial
+    ↓
+RI — Evaluación de suficiencia
+    Alta (>50% sim)  → respuesta completa con datos concretos
+    Media (35-50%)   → respuesta parcial con advertencia
+    Baja (<35%)      → reconoce limitaciones, sugiere documentos
+    ↓
+RI — Síntesis con LLM (Gemini 2.5 Flash)
+    Contexto: entidades + clases + niveles de confianza
+    Reglas: solo datos documentales, sin invención, citación de fuentes
+    ↓
+Respuesta profesional + fuentes con similarity score
+TM (audit_trail) — trazabilidad de cada consulta
+```
+
 ## ESTRUCTURA DEL PROYECTO
 ```
 delfa-bridge-core/
@@ -57,6 +77,7 @@ delfa-bridge-core/
 │   │   ├── dii.py        ← DII con Docling + LangExtract + LlamaIndex + MR
 │   │   ├── edb.py        ← EDB Lite — store y search en Supabase
 │   │   ├── grg.py        ← Governance Guardrails
+│   │   ├── ri.py         ← Response Intelligence — síntesis de respuestas
 │   │   ├── matrix.py     ← Traceability Matrix
 │   │   └── main.py       ← orquestador principal
 │   └── connectors/       ← conectores externos (Google Drive, MicroSip, etc.)

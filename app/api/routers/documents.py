@@ -121,7 +121,7 @@ async def detalle_documento(
         raise HTTPException(status_code=404, detail="Documento no encontrado.")
 
     entidades = supabase.table("entities").select(
-        "id, entity_class, entity_value, status, confidence, created_at"
+        "id, entity_class, entity_value, entity_type, data_text, knowledge_triple, status, confidence, created_at"
     ).eq("document_id", document_id).eq(
         "org_id", ctx["org_id"]
     ).execute()
@@ -131,3 +131,52 @@ async def detalle_documento(
         "entidades": entidades.data,
         "total_entidades": len(entidades.data)
     }
+
+
+@router.delete("/{document_id}")
+async def eliminar_documento(
+    document_id: str,
+    ctx: dict = Depends(requiere_rol("admin"))
+):
+    """Elimina un documento y todos sus registros asociados (cascade)."""
+    supabase = create_client(
+        os.getenv("SUPABASE_URL"),
+        os.getenv("SUPABASE_KEY")
+    )
+    org_id = ctx["org_id"]
+
+    doc = supabase.table("documents").select("id, name").eq(
+        "id", document_id
+    ).eq("org_id", org_id).execute()
+
+    if not doc.data:
+        raise HTTPException(status_code=404, detail="Documento no encontrado.")
+
+    entity_ids = supabase.table("entities").select("id").eq(
+        "document_id", document_id
+    ).eq("org_id", org_id).execute()
+    eids = [e["id"] for e in entity_ids.data]
+
+    if eids:
+        supabase.table("audit_trail").delete().in_(
+            "entity_id", eids
+        ).execute()
+        supabase.table("quarantine").delete().in_(
+            "entity_id", eids
+        ).execute()
+
+    supabase.table("audit_trail").delete().eq(
+        "document_id", document_id
+    ).execute()
+    supabase.table("entities").delete().eq(
+        "document_id", document_id
+    ).eq("org_id", org_id).execute()
+    supabase.table("documents").delete().eq(
+        "id", document_id
+    ).eq("org_id", org_id).execute()
+
+    tm = TraceabilityMatrix(org_id=org_id)
+    tm.log(component="API", action="document_deleted",
+           detail={"document_id": document_id, "name": doc.data[0]["name"]})
+
+    return {"status": "deleted", "document_id": document_id, "name": doc.data[0]["name"]}
