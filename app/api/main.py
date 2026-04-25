@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from app.api.routers import documents, search, governance, trail, connectors, billing, chat
@@ -36,6 +37,9 @@ app.include_router(trail.router)
 app.include_router(connectors.router)
 app.include_router(billing.router)
 app.include_router(chat.router)
+
+static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 @app.get("/")
 async def root():
