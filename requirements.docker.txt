@@ -1,0 +1,58 @@
+# Panohayan DLE — Docker dependencies (no macOS-only packages)
+# PyTorch CPU-only must be installed separately before this file:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+# Core framework
+fastapi==0.135.3
+uvicorn==0.42.0
+python-dotenv==1.2.2
+python-multipart==0.0.22
+pydantic==2.12.5
+pydantic-settings==2.13.1
+
+# Auth
+bcrypt==5.0.0
+PyJWT==2.12.1
+
+# Supabase
+supabase==2.28.3
+
+# LLM providers
+anthropic==0.87.0
+google-genai==1.70.0
+
+# Document processing
+docling==2.84.0
+langextract==1.2.0
+
+# Embeddings (BGE-M3 client)
+httpx==0.28.1
+
+# Database connectors
+SQLAlchemy==2.0.48
+PyMySQL==1.1.2
+
+# Graph & cache
+falkordb>=1.0.0
+redis>=5.0.0
+
+# Connectors
+msal==1.31.1
+slack-sdk==3.33.5
+simple-salesforce==1.12.6
+paramiko==3.5.1
+stripe==15.0.1
+
+# MCP
+mcp==1.27.0
+sse-starlette==3.3.4
+
+# Utils
+requests==2.33.1
+beautifulsoup4==4.14.3
+pandas==3.0.2
+openpyxl==3.1.5
+python-docx==1.2.0
+Jinja2==3.1.6
+tenacity==9.1.4
+email-validator==2.2.0

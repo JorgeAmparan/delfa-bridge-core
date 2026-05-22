@@ -42,20 +42,20 @@ class CheckoutRequest(BaseModel):
     plan: str
     email: str
     org_name: str
-    success_url: str = "https://delfa.bridge/success"
-    cancel_url: str = "https://delfa.bridge/cancel"
+    success_url: str = "https://panohayan.dle/success"
+    cancel_url: str = "https://panohayan.dle/cancel"
 
 
 class PortalRequest(BaseModel):
     customer_id: str
-    return_url: str = "https://delfa.bridge/dashboard"
+    return_url: str = "https://panohayan.dle/dashboard"
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.get("/plans")
 async def listar_planes():
-    """Lista los planes disponibles de Delfa Bridge."""
+    """Lista los planes disponibles de Panohayan DLE™."""
     return {
         "planes": [
             {
@@ -138,7 +138,7 @@ async def webhook_stripe(request: Request):
     """
     Webhook de Stripe — procesa eventos de suscripción.
     Configura esta URL en Stripe Dashboard → Webhooks.
-    URL: https://delfa-api-production.up.railway.app/billing/webhook
+    URL: https://panohayan-api-production.up.railway.app/billing/webhook
     """
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
@@ -190,7 +190,7 @@ async def _activar_suscripcion(session: dict):
     # Generar API Key única para esta organización
     raw_key = secrets.token_urlsafe(32)
     org_id = hashlib.sha256(email.encode()).hexdigest()[:16]
-    api_key = f"db_{raw_key}"
+    api_key = f"pdle_{raw_key}"
 
     # Guardar en Supabase
     from supabase import create_client

@@ -15,16 +15,18 @@ load_dotenv()
 
 # ── Config ───────────────────────────────────────────────────────────────────
 
-JWT_SECRET = os.getenv("JWT_SECRET", "delfa-jwt-secret-change-in-production")
-JWT_ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
-REFRESH_TOKEN_EXPIRE_DAYS = 7
+JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET:
+    raise RuntimeError("JWT_SECRET environment variable is required")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
 
 API_KEY_HEADER = APIKeyHeader(name="X-API-Key", auto_error=False)
 BEARER_SCHEME = HTTPBearer(auto_error=False)
 
-DEV_API_KEY = os.getenv("API_KEY", "delfa-dev-key-2026")
-DEV_ORG_ID = os.getenv("ORG_ID", "delfa-demo")
+DEV_API_KEY = os.getenv("API_KEY")
+DEV_ORG_ID = os.getenv("ORG_ID", "panohayan-demo")
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -113,8 +115,8 @@ async def verificar_credenciales(
 
     # ── Opcion 2: API Key ──
     if api_key:
-        # Dev key
-        if api_key == DEV_API_KEY:
+        # Dev key (only if API_KEY env var is explicitly set)
+        if DEV_API_KEY and api_key == DEV_API_KEY:
             return {
                 "org_id": DEV_ORG_ID,
                 "plan": "development",

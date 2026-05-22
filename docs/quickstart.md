@@ -1,7 +1,7 @@
-# Delfa Bridge — Quickstart Guide
+# Panohayan DLE™ — Quickstart Guide
 > Powered by Panohayan™ Architecture
 
-Get started with Delfa Bridge in under 5 minutes.
+Get started with Panohayan DLE™ in under 5 minutes.
 
 ---
 
@@ -12,13 +12,13 @@ All requests require an API Key in the header:
 X-API-Key: your_api_key_here
 ```
 
-Get your API Key after subscribing at [delfa.bridge](https://delfa.bridge).
+Get your API Key after subscribing at [panohayan.dle](https://panohayan.dle).
 
 ---
 
 ## 2. Base URL
 ```
-https://delfa-api-production.up.railway.app
+https://panohayan-api-production.up.railway.app
 ```
 
 ---
@@ -27,7 +27,7 @@ https://delfa-api-production.up.railway.app
 
 Upload a PDF, DOCX, or XLSX and Panohayan™ will extract all entities automatically.
 ```bash
-curl -X POST https://delfa-api-production.up.railway.app/documents/process \
+curl -X POST https://panohayan-api-production.up.railway.app/documents/process \
   -H "X-API-Key: your_api_key" \
   -F "file=@your_document.pdf"
 ```
@@ -53,7 +53,7 @@ curl -X POST https://delfa-api-production.up.railway.app/documents/process \
 
 Ask anything in natural language:
 ```bash
-curl -X POST https://delfa-api-production.up.railway.app/search/ \
+curl -X POST https://panohayan-api-production.up.railway.app/search/ \
   -H "X-API-Key: your_api_key" \
   -H "Content-Type: application/json" \
   -d '{"query": "who signed the contract?", "limit": 5}'
@@ -78,7 +78,7 @@ curl -X POST https://delfa-api-production.up.railway.app/search/ \
 
 ## 5. List processed documents
 ```bash
-curl https://delfa-api-production.up.railway.app/documents/ \
+curl https://panohayan-api-production.up.railway.app/documents/ \
   -H "X-API-Key: your_api_key"
 ```
 
@@ -86,7 +86,7 @@ curl https://delfa-api-production.up.railway.app/documents/ \
 
 ## 6. Get full audit trail
 ```bash
-curl https://delfa-api-production.up.railway.app/trail/document/{document_id} \
+curl https://panohayan-api-production.up.railway.app/trail/document/{document_id} \
   -H "X-API-Key: your_api_key"
 ```
 
@@ -96,7 +96,7 @@ curl https://delfa-api-production.up.railway.app/trail/document/{document_id} \
 
 Process an entire Drive folder automatically:
 ```bash
-curl -X POST https://delfa-api-production.up.railway.app/connectors/drive/process \
+curl -X POST https://panohayan-api-production.up.railway.app/connectors/drive/process \
   -H "X-API-Key: your_api_key" \
   -H "Content-Type: application/json" \
   -d '{"folder_id": "your_google_drive_folder_id"}'
@@ -106,7 +106,7 @@ curl -X POST https://delfa-api-production.up.railway.app/connectors/drive/proces
 
 ## 8. Connect MicroSip ERP
 ```bash
-curl -X POST https://delfa-api-production.up.railway.app/connectors/microsip/login \
+curl -X POST https://panohayan-api-production.up.railway.app/connectors/microsip/login \
   -H "X-API-Key: your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -123,7 +123,7 @@ curl -X POST https://delfa-api-production.up.railway.app/connectors/microsip/log
 
 Set rules for your organization — no code required:
 ```bash
-curl -X POST https://delfa-api-production.up.railway.app/governance/rules \
+curl -X POST https://panohayan-api-production.up.railway.app/governance/rules \
   -H "X-API-Key: your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -144,7 +144,7 @@ curl -X POST https://delfa-api-production.up.railway.app/governance/rules \
 
 ## 10. Connect SQL Database
 ```bash
-curl -X POST https://delfa-api-production.up.railway.app/connectors/sql/connect \
+curl -X POST https://panohayan-api-production.up.railway.app/connectors/sql/connect \
   -H "X-API-Key: your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -163,7 +163,7 @@ curl -X POST https://delfa-api-production.up.railway.app/connectors/sql/connect 
 
 Interactive docs available at:
 ```
-https://delfa-api-production.up.railway.app/docs
+https://panohayan-api-production.up.railway.app/docs
 ```
 
 ---
@@ -178,5 +178,5 @@ Coming soon:
 
 ---
 
-*Delfa Bridge — Intelligent Middleware for Enterprise AI*
+*Panohayan DLE™ — Intelligent Middleware for Enterprise AI*
 *Powered by Panohayan™ | Built in Ciudad Juárez, México 🇲🇽*

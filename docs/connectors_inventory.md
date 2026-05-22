@@ -1,4 +1,4 @@
-# Inventario Técnico de Conectores — Delfa Bridge
+# Inventario Técnico de Conectores — Panohayan DLE™
 
 > Referencia autoritativa para implementación de los 28 conectores pendientes.
 > Generado: 2026-04-02 | Arquitectura: Panohayan™
@@ -90,17 +90,17 @@ TM (Traceability Matrix) — audit trail
 
 | # | Conector | Archivo | Método | Endpoints | Auth | Deps pip | Complejidad |
 |---|---------|---------|--------|-----------|------|----------|-------------|
-| 24 | Make (Integromat) | `make.py` | Webhook (Delfa recibe) | `POST /connectors/make/webhook` | API Key (header custom) | Ninguna extra | Simple |
-| 25 | Zapier | `zapier.py` | Webhook (Delfa recibe) | `POST /connectors/zapier/webhook` | API Key (header custom) | Ninguna extra | Simple |
-| 26 | n8n | `n8n.py` | Webhook (Delfa recibe) | `POST /connectors/n8n/webhook` | API Key (header custom) | Ninguna extra | Simple |
+| 24 | Make (Integromat) | `make.py` | Webhook (Panohayan DLE™ recibe) | `POST /connectors/make/webhook` | API Key (header custom) | Ninguna extra | Simple |
+| 25 | Zapier | `zapier.py` | Webhook (Panohayan DLE™ recibe) | `POST /connectors/zapier/webhook` | API Key (header custom) | Ninguna extra | Simple |
+| 26 | n8n | `n8n.py` | Webhook (Panohayan DLE™ recibe) | `POST /connectors/n8n/webhook` | API Key (header custom) | Ninguna extra | Simple |
 
 ### No-devs (4)
 
 | # | Conector | Archivo | Método | Endpoints | Auth | Deps pip | Complejidad |
 |---|---------|---------|--------|-----------|------|----------|-------------|
-| 27 | Plugin Bubble | `bubble.py` | REST API (Bubble → Delfa) | `POST /connectors/bubble/process` | API Key | Ninguna extra | Simple |
-| 28 | Plugin Lovable | `lovable.py` | REST API (Lovable → Delfa) | `POST /connectors/lovable/process` | API Key | Ninguna extra | Simple |
-| 29 | Chrome Extension | `chrome_ext.py` | REST API (ext → Delfa) | `POST /connectors/chrome-ext/process` | API Key (usuario autenticado) | Ninguna extra | Simple |
+| 27 | Plugin Bubble | `bubble.py` | REST API (Bubble → Panohayan DLE™) | `POST /connectors/bubble/process` | API Key | Ninguna extra | Simple |
+| 28 | Plugin Lovable | `lovable.py` | REST API (Lovable → Panohayan DLE™) | `POST /connectors/lovable/process` | API Key | Ninguna extra | Simple |
+| 29 | Chrome Extension | `chrome_ext.py` | REST API (ext → Panohayan DLE™) | `POST /connectors/chrome-ext/process` | API Key (usuario autenticado) | Ninguna extra | Simple |
 | 30 | Webhook genérico | `webhook.py` | Webhook (cualquier fuente) | `POST /connectors/webhook/receive` | API Key o HMAC signature | Ninguna extra | Simple |
 
 ---
@@ -157,9 +157,9 @@ Paquetes ya en el proyecto: `requests`, `sqlalchemy`, `google-auth`, `google-api
 | Make | `MAKE_WEBHOOK_SECRET` |
 | Zapier | `ZAPIER_WEBHOOK_SECRET` |
 | n8n | `N8N_WEBHOOK_SECRET` |
-| Bubble | (usa auth estándar de Delfa Bridge) |
-| Lovable | (usa auth estándar de Delfa Bridge) |
-| Chrome Extension | (usa auth estándar de Delfa Bridge) |
+| Bubble | (usa auth estándar de Panohayan DLE™) |
+| Lovable | (usa auth estándar de Panohayan DLE™) |
+| Chrome Extension | (usa auth estándar de Panohayan DLE™) |
 | Webhook genérico | `WEBHOOK_HMAC_SECRET` (opcional) |
 
 ## Orden de implementación sugerido

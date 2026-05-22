@@ -74,7 +74,7 @@ class ResponseIntelligence:
         contexto = self._construir_contexto(entidades)
         instruccion_suficiencia = self._instruccion_por_suficiencia(suficiencia)
 
-        prompt = f"""Eres el asistente inteligente de Delfa Bridge, un middleware de IA empresarial con arquitectura Panohayan™.
+        prompt = f"""Eres el asistente inteligente de Panohayan DLE™, un middleware de IA empresarial con arquitectura Panohayan™.
 Tu función es responder consultas sobre documentos que han sido procesados, normalizados y almacenados.
 
 Pregunta del usuario: "{query}"

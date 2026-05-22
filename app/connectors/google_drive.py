@@ -11,7 +11,7 @@ load_dotenv()
 
 # ─── GOOGLE DRIVE CONNECTOR | Panohayan™ ─────────────────────────────────────
 #
-# Conecta Delfa Bridge a Google Drive.
+# Conecta Panohayan DLE™ a Google Drive.
 # Descarga documentos y los procesa a través del pipeline DII.
 # Soporta: PDF, DOCX, XLSX, Google Docs (exportados)
 # ─────────────────────────────────────────────────────────────────────────────

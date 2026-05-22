@@ -2,7 +2,7 @@ import os
 import hashlib
 from dotenv import load_dotenv
 from supabase import create_client, Client
-from openai import OpenAI
+from app.embeddings.bge_client import bge_client, BGE_M3_DIMS
 from app.core.intent import QueryIntentAnalyzer
 from app.core.matrix import TraceabilityMatrix
 
@@ -21,22 +21,16 @@ class EntityDataBrain:
             os.getenv("SUPABASE_URL"),
             os.getenv("SUPABASE_KEY")
         )
-        # OpenAI para embeddings (text-embedding-3-small — económico y preciso)
-        self.openai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        self.embedding_model = "text-embedding-3-small"
-        self.embedding_dims = 1536
+        self.embedder = bge_client
+        self.embedding_dims = BGE_M3_DIMS
         self.query_analyzer = QueryIntentAnalyzer()
         self.tm = TraceabilityMatrix(org_id=self.org_id)
 
     # ── Embeddings ───────────────────────────────────────────────────────────
 
     def _generar_embedding(self, texto: str) -> list:
-        """Genera embedding vectorial de un texto."""
-        respuesta = self.openai.embeddings.create(
-            model=self.embedding_model,
-            input=texto.strip()
-        )
-        return respuesta.data[0].embedding
+        """Genera embedding vectorial de un texto via BGE-M3."""
+        return self.embedder.embed(texto)
 
     # ── Store ─────────────────────────────────────────────────────────────────
 
@@ -57,7 +51,7 @@ class EntityDataBrain:
             self.tm.log(component="EDB", action="embedded",
                         entity_id=entity_id, detail={
                             "entity_class": entity_class,
-                            "model": self.embedding_model
+                            "model": "bge-m3"
                         })
             print(f"  [EDB] Embedding guardado: {entity_class} = {entity_value[:40]}")
             return True

@@ -9,12 +9,12 @@ load_dotenv()
 # ─── AGENTE ON-PREMISE CONNECTOR | Panohayan™ ───────────────────────────────
 #
 # Recibe datos enviados por un agente instalado en la red del cliente.
-# El agente on-premise actúa como bridge entre sistemas internos y Delfa.
+# El agente on-premise actúa como bridge entre sistemas internos y Panohayan DLE™.
 #
 # Flujo:
 #   1. Agente on-premise extrae datos de sistemas internos
 #   2. Agente envía via POST a /connectors/onpremise/receive
-#   3. Delfa procesa via DII pipeline
+#   3. Panohayan DLE™ procesa via DII pipeline
 #   4. Agente consulta /connectors/onpremise/status para verificar
 #
 # Autenticación: shared secret (API Key en header X-Agent-Secret)

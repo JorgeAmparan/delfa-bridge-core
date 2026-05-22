@@ -2,7 +2,7 @@ from app.connectors.webhook_base import WebhookConnector
 
 # ─── CHROME EXTENSION CONNECTOR | Panohayan™ ────────────────────────────────
 #
-# Recibe datos capturados por la extensión de Chrome de Delfa Bridge.
+# Recibe datos capturados por la extensión de Chrome de Panohayan DLE™.
 # La extensión envía: texto seleccionado, HTML de página, o screenshots.
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -10,7 +10,7 @@ from app.connectors.webhook_base import WebhookConnector
 class ChromeExtConnector(WebhookConnector):
 
     CONNECTOR_NAME = "chrome_ext"
-    SECRET_ENV_VAR = None  # Usa auth estándar de Delfa Bridge (JWT)
+    SECRET_ENV_VAR = None  # Usa auth estándar de Panohayan DLE™ (JWT)
 
     def extraer_contenido(self, payload: dict) -> str:
         """

@@ -3,14 +3,14 @@ from app.connectors.webhook_base import WebhookConnector
 # ─── LOVABLE PLUGIN CONNECTOR | Panohayan™ ──────────────────────────────────
 #
 # Recibe datos desde apps generadas con Lovable (ex-GPT Engineer).
-# Lovable apps envían JSON via fetch/axios al endpoint de Delfa.
+# Lovable apps envían JSON via fetch/axios al endpoint de Panohayan DLE™.
 # ─────────────────────────────────────────────────────────────────────────────
 
 
 class LovableConnector(WebhookConnector):
 
     CONNECTOR_NAME = "lovable"
-    SECRET_ENV_VAR = None  # Usa auth estándar de Delfa Bridge
+    SECRET_ENV_VAR = None  # Usa auth estándar de Panohayan DLE™
 
     def extraer_contenido(self, payload: dict) -> str:
         """

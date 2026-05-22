@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    env:
+      JWT_SECRET: ci-test-secret-not-real
+      ALLOWED_ORIGINS: http://localhost:3000
+      SUPABASE_URL: https://fake.supabase.co
+      SUPABASE_KEY: fake-key-for-ci
+      GOOGLE_API_KEY: fake-key-for-ci
+      BGE_M3_URL: http://localhost:8080
+      REDIS_URL: redis://localhost:6379/0
+      FALKORDB_HOST: localhost
+      ORG_ID: ci-test-org
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install ruff pytest pytest-cov httpx
+          pip install -r requirements.docker.txt || true
+
+      - name: Lint with ruff
+        run: ruff check app/ tests/ --output-format=github
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short --cov=app --cov-report=term-missing
+
+  type-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install mypy
+          pip install -r requirements.docker.txt || true
+
+      - name: Type check new modules
+        run: |
+          mypy app/embeddings/ app/graph/ app/cache/ \
+            --ignore-missing-imports --no-strict-optional || true

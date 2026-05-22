@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Delfa Bridge — Portal Demo</title>
+<title>Panohayan DLE™ — Portal Demo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display&display=swap" rel="stylesheet">
@@ -611,14 +611,14 @@ tbody tr:hover { background: rgba(15,29,50,0.5); }
 <div id="loginScreen" class="login-wrapper">
   <div class="login-card">
     <div style="text-align:center;margin-bottom:16px;">
-      <img src="/static/assets/Loco AI ChatBot.png" alt="Delfa Bridge" width="64" height="64" style="border-radius:12px;">
+      <img src="/static/assets/Loco AI ChatBot.png" alt="Panohayan DLE™" width="64" height="64" style="border-radius:12px;">
     </div>
-    <h1>Delfa Bridge</h1>
+    <h1>Panohayan DLE™</h1>
     <p class="subtitle">Middleware de IA con arquitectura Panohayan&trade;</p>
     <div id="loginError" class="error-msg"></div>
     <div class="field">
       <label>Email</label>
-      <input type="email" id="loginEmail" value="admin@delfa-test.com" placeholder="tu@email.com">
+      <input type="email" id="loginEmail" value="admin@panohayan-test.com" placeholder="tu@email.com">
     </div>
     <div class="field">
       <label>Password</label>
@@ -643,9 +643,9 @@ tbody tr:hover { background: rgba(15,29,50,0.5); }
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div style="display:flex;align-items:center;gap:12px;">
-        <img src="/static/assets/Loco AI ChatBot.png" alt="Delfa Bridge" width="38" height="38" style="flex-shrink:0;border-radius:8px;">
+        <img src="/static/assets/Loco AI ChatBot.png" alt="Panohayan DLE™" width="38" height="38" style="flex-shrink:0;border-radius:8px;">
         <div>
-          <h1>Delfa Bridge</h1>
+          <h1>Panohayan DLE™</h1>
           <span>Panohayan&trade; Portal</span>
         </div>
       </div>
@@ -701,7 +701,7 @@ tbody tr:hover { background: rgba(15,29,50,0.5); }
     <div class="page active" id="page-dashboard">
       <div class="page-header">
         <h2>Dashboard</h2>
-        <p>Vista general de Delfa Bridge &mdash; datos en tiempo real</p>
+        <p>Vista general de Panohayan DLE™ &mdash; datos en tiempo real</p>
       </div>
       <div class="stats-grid">
         <div class="stat-card">
@@ -749,7 +749,7 @@ tbody tr:hover { background: rgba(15,29,50,0.5); }
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           </div>
           <h3>Consulta tus documentos</h3>
-          <p>Pregunta lo que necesites sobre los documentos procesados. Delfa Bridge busca sem&aacute;nticamente en las entidades extra&iacute;das.</p>
+          <p>Pregunta lo que necesites sobre los documentos procesados. Panohayan DLE™ busca sem&aacute;nticamente en las entidades extra&iacute;das.</p>
           <div class="chat-suggestions">
             <div class="chat-suggestion" onclick="chatFromSuggestion(this)">&iquest;Qui&eacute;n firma el contrato?</div>
             <div class="chat-suggestion" onclick="chatFromSuggestion(this)">&iquest;Cu&aacute;l es el monto total?</div>
@@ -845,7 +845,7 @@ function toggleTheme() {
   const current = html.getAttribute('data-theme');
   const next = current === 'light' ? 'dark' : 'light';
   html.setAttribute('data-theme', next);
-  localStorage.setItem('delfa-theme', next);
+  localStorage.setItem('panohayan-theme', next);
   updateThemeUI(next);
 }
 function updateThemeUI(theme) {
@@ -860,7 +860,7 @@ function updateThemeUI(theme) {
   }
 }
 (function() {
-  const saved = localStorage.getItem('delfa-theme');
+  const saved = localStorage.getItem('panohayan-theme');
   if (saved) {
     document.documentElement.setAttribute('data-theme', saved);
     updateThemeUI(saved);
@@ -869,7 +869,9 @@ function updateThemeUI(theme) {
 
 function authHeaders() {
   const h = { 'Accept': 'application/json' };
-  h['X-API-Key'] = 'delfa-dev-key-2026';
+  if (token) {
+    h['Authorization'] = 'Bearer ' + token;
+  }
   return h;
 }
 
@@ -918,7 +920,7 @@ async function doLogin() {
 
 function demoAccess() {
   token = null;
-  currentUser = { name: 'Demo User', email: 'demo@delfa.bridge', role: 'admin' };
+  currentUser = { name: 'Demo User', email: 'demo@panohayan.dle', role: 'admin' };
   showApp();
 }
 

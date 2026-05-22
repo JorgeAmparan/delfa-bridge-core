@@ -7,7 +7,7 @@ load_dotenv()
 
 # ─── ASPEL CONNECTOR | Panohayan™ ───────────────────────────────────────────
 #
-# Conecta Delfa Bridge a Aspel SAE / COI / NOI.
+# Conecta Panohayan DLE™ a Aspel SAE / COI / NOI.
 # Patrón dual:
 #   Opción A — Conexión directa a BD (SQL Server o Firebird según versión)
 #   Opción B — Archivos exportados (XML CFDI, CSV reportes)

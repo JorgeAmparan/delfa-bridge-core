@@ -7,7 +7,7 @@ load_dotenv()
 
 # ─── MICROSIP CONNECTOR | Panohayan™ ─────────────────────────────────────────
 #
-# Conecta Delfa Bridge a MicroSip ERP via API REST local.
+# Conecta Panohayan DLE™ a MicroSip ERP via API REST local.
 # Autenticación por sesión: POST /login → token → consultas
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -279,7 +279,7 @@ if __name__ == "__main__":
     print("  MICROSIP_URL=http://18.222.120.251:5000")
     print("  MICROSIP_USER=tu_usuario")
     print("  MICROSIP_PASSWORD=tu_password")
-    print("  MICROSIP_DB=189.206.114.34:/microsip datos/DELFA BOS.fdb")
+    print("  MICROSIP_DB=<host>:/<ruta_base_datos>.fdb")
 
 # ─── OPCIÓN A — CONEXIÓN DIRECTA A BASE DE DATOS ─────────────────────────────
 

@@ -1,16 +1,16 @@
-# Delfa Bridge 🌉
-### Intelligent Middleware for Enterprise AI | Powered by Panohayan™
+# Panohayan DLE™
+### Enterprise AI Middleware | Powered by the Panohayan™ Architecture
 
 [![Python](https://img.shields.io/badge/Python-3.11-blue)](https://python.org)
 [![Supabase](https://img.shields.io/badge/Supabase-pgvector-green)](https://supabase.com)
 [![Docling](https://img.shields.io/badge/Docling-2.x-orange)](https://github.com/DS4SD/docling)
 [![License](https://img.shields.io/badge/License-Proprietary-red)](LICENSE)
 
-Delfa Bridge closes the gap between chaotic enterprise documents and professional-grade AI agents. Through the **Panohayan™ architecture**, it transforms unstructured data — PDFs, Word, Excel, ERPs, APIs — into a structured, auditable, and AI-ready Entity Data Brain.
+Panohayan DLE™ closes the gap between chaotic enterprise documents and professional-grade AI agents. Through the **Panohayan™ architecture**, it transforms unstructured data — PDFs, Word, Excel, ERPs, APIs — into a structured, auditable, and AI-ready Entity Data Brain.
 
 ---
 
-## 🧠 Panohayan™ Architecture
+## Panohayan™ Architecture
 ```
 Document (PDF, DOCX, XLSX, ERP, API)
         ↓
@@ -37,7 +37,7 @@ Document (PDF, DOCX, XLSX, ERP, API)
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 - **Zero hallucination** — GRG ensures every AI response is grounded in verified, traceable data
 - **Full traceability** — TM logs every decision back to its document source
@@ -48,7 +48,7 @@ Document (PDF, DOCX, XLSX, ERP, API)
 
 ---
 
-## 🏗️ The 4 Pillars
+## The 4 Pillars
 
 | Component | Name | Role |
 |-----------|------|------|
@@ -59,7 +59,7 @@ Document (PDF, DOCX, XLSX, ERP, API)
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -74,7 +74,7 @@ Document (PDF, DOCX, XLSX, ERP, API)
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Python 3.11+
@@ -84,8 +84,8 @@ Document (PDF, DOCX, XLSX, ERP, API)
 
 ### Installation
 ```bash
-git clone https://github.com/JorgeAmparan/delfa-bridge-core.git
-cd delfa-bridge-core
+git clone https://github.com/JorgeAmparan/panohayan-dle-core.git
+cd panohayan-dle-core
 
 python3.11 -m venv venv
 source venv/bin/activate
@@ -107,9 +107,9 @@ python3 app/core/dii.py
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 ```
-delfa-bridge-core/
+panohayan-dle/
 ├── app/
 │   ├── core/
 │   │   ├── dii.py        # DII — Document ingestion pipeline
@@ -121,14 +121,14 @@ delfa-bridge-core/
 │   └── connectors/       # External connectors (Drive, MicroSip, etc.)
 ├── data/                 # Documents directory (gitignored)
 ├── CLAUDE.md             # AI context instructions
-├── DelfaBridge_Blueprint_v1.md  # Architecture blueprint
+├── PanohayanDLE_Blueprint_v1.md  # Architecture blueprint
 ├── .env.example          # Environment template
 └── README.md
 ```
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [x] DII v2 — Docling + LangExtract + LlamaIndex + Model Router
 - [x] Supabase schema — 5 tables + pgvector + RLS
@@ -143,12 +143,10 @@ delfa-bridge-core/
 
 ---
 
-## 🏢 About
+## About
 
-**Delfa Bridge** is built on **Panohayan™** architecture, proprietary IP by Jorge Luis Amparán Hernández / Lappicero Studio.
-
-Licensed exclusively to Juan del Hoyo for commercial use under Delfa Bridge.
+**Panohayan DLE™** is built on **Panohayan™** architecture, proprietary IP by Jorge Luis Amparán Hernández / Lappicero Studio.
 
 ---
 
-*Built in Ciudad Juárez, México 🇲🇽 — at the heart of the T-MEC industrial corridor*
+*Built in Ciudad Juárez, México -- at the heart of the T-MEC industrial corridor*

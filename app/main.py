@@ -6,7 +6,7 @@ load_dotenv()
 
 # ─── PANOHAYAN™ ORCHESTRATOR ──────────────────────────────────────────────────
 #
-# Punto de entrada principal de Delfa Bridge.
+# Punto de entrada principal de Panohayan DLE™.
 # Coordina el pipeline completo:
 # DII → EDB → GRG → TM
 # Con Intent-A y Intent-B integrados en cada componente.
@@ -42,7 +42,7 @@ class PanohayanOrchestrator:
         4. TM  — registra resumen del pipeline
         """
         print("=" * 60)
-        print("  PANOHAYAN™ | Delfa Bridge")
+        print("  PANOHAYAN DLE™")
         print(f"  Organización: {self.org_id}")
         print("=" * 60)
 

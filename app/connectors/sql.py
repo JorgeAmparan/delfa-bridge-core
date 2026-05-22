@@ -35,7 +35,7 @@ class SQLConnector:
         self.port = port or int(os.getenv("SQL_PORT", "3306"))
         self.database = database or os.getenv("SQL_DATABASE", "")
         self.username = username or os.getenv("SQL_USER", "")
-        self.password = password or int(os.getenv("SQL_PASSWORD", ""))
+        self.password = password or os.getenv("SQL_PASSWORD", "")
         self.connection_string = connection_string or os.getenv("SQL_CONNECTION_STRING")
         self.engine = None
 

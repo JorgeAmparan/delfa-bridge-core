@@ -10,19 +10,24 @@ import os
 load_dotenv()
 
 app = FastAPI(
-    title="Delfa Bridge API",
-    description="Intelligent Middleware for Enterprise AI | Powered by Panohayan™",
+    title="Panohayan DLE™ API",
+    description="Intelligent Middleware for Enterprise AI | Panohayan DLE™",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
 )
 
-# CORS — configurable via ALLOWED_ORIGINS en .env
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "")
+if not ALLOWED_ORIGINS:
+    raise RuntimeError(
+        "ALLOWED_ORIGINS environment variable is required "
+        "(comma-separated domains, e.g. https://app.panohayan.com,http://localhost:3000)"
+    )
+_origins = [o.strip() for o in ALLOWED_ORIGINS.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -44,7 +49,7 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 @app.get("/")
 async def root():
     return {
-        "product": "Delfa Bridge",
+        "product": "Panohayan DLE™",
         "architecture": "Panohayan™",
         "version": "1.0.0",
         "status": "operational",

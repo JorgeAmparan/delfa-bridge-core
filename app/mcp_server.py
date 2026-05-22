@@ -13,11 +13,11 @@ load_dotenv()
 
 # ─── PANOHAYAN™ MCP SERVER ────────────────────────────────────────────────────
 #
-# Expone Delfa Bridge como MCP server.
+# Expone Panohayan DLE™ como MCP server.
 # Permite conectar Panohayan™ directamente a Claude y ecosistema MCP.
 # ─────────────────────────────────────────────────────────────────────────────
 
-server = Server("delfa-bridge")
+server = Server("panohayan-dle")
 
 
 @server.list_tools()
@@ -61,7 +61,7 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "document_id": {
                         "type": "string",
-                        "description": "ID del documento en Delfa Bridge"
+                        "description": "ID del documento en Panohayan DLE™"
                     }
                 },
                 "required": ["document_id"]
@@ -173,7 +173,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 text="No hay documentos procesados."
             )]
 
-        texto = f"Documentos en Delfa Bridge ({len(resultado.data)}):\n\n"
+        texto = f"Documentos en Panohayan DLE™ ({len(resultado.data)}):\n\n"
         for doc in resultado.data:
             texto += (
                 f"• {doc['name']} [{doc['source_type']}] "

@@ -10,7 +10,7 @@ from app.connectors.webhook_base import WebhookConnector
 class BubbleConnector(WebhookConnector):
 
     CONNECTOR_NAME = "bubble"
-    SECRET_ENV_VAR = None  # Usa auth estándar de Delfa Bridge
+    SECRET_ENV_VAR = None  # Usa auth estándar de Panohayan DLE™
 
     def extraer_contenido(self, payload: dict) -> str:
         """

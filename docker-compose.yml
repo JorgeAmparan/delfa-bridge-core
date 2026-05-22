@@ -2,9 +2,9 @@ version: "3.9"
 
 services:
 
-  delfa-api:
+  panohayan-api:
     build: .
-    container_name: delfa-bridge-api
+    container_name: panohayan-dle-api
     ports:
       - "8000:8000"
     env_file:
@@ -18,9 +18,9 @@ services:
       timeout: 10s
       retries: 3
 
-  delfa-dii:
+  panohayan-dii:
     build: .
-    container_name: delfa-bridge-dii
+    container_name: panohayan-dle-dii
     ports:
       - "8001:8001"
     env_file:
@@ -30,9 +30,9 @@ services:
     command: ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8001"]
     restart: unless-stopped
 
-  delfa-edb:
+  panohayan-edb:
     build: .
-    container_name: delfa-bridge-edb
+    container_name: panohayan-dle-edb
     ports:
       - "8002:8002"
     env_file:
@@ -42,9 +42,9 @@ services:
     command: ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8002"]
     restart: unless-stopped
 
-  delfa-grg:
+  panohayan-grg:
     build: .
-    container_name: delfa-bridge-grg
+    container_name: panohayan-dle-grg
     ports:
       - "8003:8003"
     env_file:
@@ -52,9 +52,9 @@ services:
     command: ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8003"]
     restart: unless-stopped
 
-  delfa-matrix:
+  panohayan-matrix:
     build: .
-    container_name: delfa-bridge-matrix
+    container_name: panohayan-dle-matrix
     ports:
       - "8004:8004"
     env_file:
@@ -64,7 +64,7 @@ services:
 
 networks:
   default:
-    name: delfa-network
+    name: panohayan-network
 
 volumes:
   data:

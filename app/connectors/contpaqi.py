@@ -7,7 +7,7 @@ load_dotenv()
 
 # ─── CONTPAQI CONNECTOR | Panohayan™ ────────────────────────────────────────
 #
-# Conecta Delfa Bridge a CONTPAQi Comercial / Contabilidad.
+# Conecta Panohayan DLE™ a CONTPAQi Comercial / Contabilidad.
 # Patrón dual:
 #   Opción A — Conexión directa a BD SQL Server (ODBC)
 #   Opción B — Archivos exportados (XML CFDI, CSV reportes, PDF)
