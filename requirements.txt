@@ -1,3 +1,21 @@
+# ============================================================
+# DOCYAN LDE — by XCID — requirements.txt
+# Actualizado 28 mayo 2026 — post-PoC GraphRAG-SDK
+# ============================================================
+# NOTA DE VERSIONES POST-PoC (resolver en B1 con el resolver real):
+#   graphrag-sdk, litellm y apscheduler se agregan SIN pin fijo
+#   porque graphrag-sdk 1.1.1 impone restricciones sobre litellm,
+#   openai y los SDKs de Google que deben resolverse instalando
+#   en el entorno real. Opus pinea en B1 con lo que el resolver
+#   determine. NO inventar pins aquí (rompería la instalación frozen).
+# ============================================================
+
+# --- NUEVO post-PoC: arquitectura de ingesta ---
+graphrag-sdk          # FalkorDB GraphRAG-SDK 1.1.1 — reemplaza DII. Pin en B1.
+litellm               # LLM-agnóstico para GraphRAG-SDK (prefijo gemini/ obligatorio). Pin en B1.
+apscheduler           # Scheduler con backend Redis (decisión #3). Pin en B1.
+
+# --- Stack base (frozen, validado) ---
 absl-py==2.4.0
 accelerate==1.13.0
 aiohappyeyeballs==2.6.1
@@ -207,8 +225,25 @@ xlsxwriter==3.2.9
 yarl==1.23.0
 zstandard==0.25.0
 
-# Fase 2 — Connectors
+# --- Reconstrucción de formato (B4) — verificar/agregar en B4 ---
+weasyprint            # Reconstrucción PDF (doc 12). Pin en B4.
+
+# --- Connectors (Fase 2) ---
 msal==1.31.1
 slack-sdk==3.33.5
 simple-salesforce==1.12.6
 paramiko==3.5.1
+
+# ============================================================
+# NOTAS DE STACK (validadas por PoC — NO eliminar):
+# - openai 2.30.0: gpt-4o-mini es el QA del pipeline de ingesta
+#   (REPORTE_CONTRATO4). NO es dependencia fantasma.
+# - google-genai/google-generativeai: Gemini 2.5 Flash extracción
+#   + resolution (config de ingesta validada).
+# - torch/transformers/accelerate/safetensors/tokenizers: BGE-M3
+#   self-hosted (decisión #1). NO eliminar.
+# - tiktoken 0.12.0: cotizador pre-ingesta (B3). Ya presente.
+# - docling + llama-index: stack de ingesta multi-formato (adenda 5).
+# - vecalign + hunalign (B5): binarios externos, instalar vía
+#   Dockerfile, no pip.
+# ============================================================

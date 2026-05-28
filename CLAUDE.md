@@ -1,16 +1,18 @@
-# CLAUDE.md — Panohayan DLE™ by XCID
+# CLAUDE.md — DOCYAN LDE™ by XCID
 
-> **Archivo de contexto operativo para Claude Code CLI (Opus 4.7).**
+> **Archivo de contexto operativo para Claude Code CLI (Opus 4.8).**
 > Este archivo se lee al inicio de cada sesión. NO es documentación arquitectónica — para eso existen los Sprint Contracts y los docs 00-14 que Jorge pega en cada sesión cuando aplica. Este archivo es **cómo trabajar en este repo**.
+>
+> **Actualizado 28 mayo 2026** — post-PoC GraphRAG-SDK + rebrand Panohayan→DOCYAN + siglas DKG/DTM. Incorpora la adenda post-PoC (`docs/adenda_postPoC_28mayo2026.md`) como ley operativa.
 
 ---
 
 ## 1. Producto
 
-**Panohayan DLE™ — Document Localization Engine — by XCID**
+**DOCYAN LDE™ — Live Document Environment — by XCID**
 Empresa: XCID SA de CV. Fundador: Jorge Luis Amparán Hernández.
 
-Panohayan DLE™ es la marca propia; XCID es la empresa matriz; XCID Inside es el motor invisible. En código y en assets visibles al usuario final usar **Panohayan DLE™**. En código interno (clases, paquetes, módulos) usar `panohayan_dle` o `panohayan` según contexto.
+DOCYAN LDE™ es la marca propia; XCID es la empresa matriz; XCID Inside es el motor invisible. "Yan" = "lugar" en náhuatl → "el lugar de los documentos". El nombre anterior **Panohayan** queda obsoleto: toda referencia a "Panohayan" en código o docs es deuda de rebrand y debe limpiarse. En código y assets visibles usar **DOCYAN LDE™**. En código interno (clases, paquetes, módulos) usar `docyan` según contexto. El paquete Python es `app` (no `docyan/` ni `panohayan/`).
 
 **NO es una herramienta CAT.** Es una capa de gobernanza lingüística + documento vivo consultable vía QR + IA con renderización condicional por tipo de intención.
 
@@ -24,8 +26,6 @@ Panohayan DLE™ es la marca propia; XCID es la empresa matriz; XCID Inside es e
 ## 2. Cómo trabajar en este repo
 
 ### 2.1. Un Sprint = una aprobación + ejecución completa + un reporte
-
-El flujo es:
 
 1. Jorge pega un Sprint Contract en CLI.
 2. Tú (Opus) ejecutas el Sprint Contract **completo**, sin pedir confirmaciones intermedias.
@@ -55,20 +55,24 @@ Si algo no se ejecutó, dilo explícito. Si algo se ejecutó parcialmente, di qu
 - **Sin tests = sprint no terminado.** No reportes "completado" si no hay tests escritos y pasando para el componente nuevo.
 - Cobertura objetivo ≥75% en módulos nuevos.
 
-### 2.4. Disciplina de contratos backend↔frontend
+### 2.4. No stubs, no mocks, no hardcoded
+
+Todo lo que el Sprint Contract describe se construye **real**. No stubs funcionales, no mocks fuera de tests, no valores hardcodeados que simulen funcionalidad. Un placeholder explícito de verificación de toolchain (ej. "boot OK") es legítimo; un stub que finge una capacidad no lo es.
+
+### 2.5. Disciplina de contratos backend↔frontend
 
 - Backend: schemas Pydantic v2 estrictos exportan OpenAPI 3.1.
 - Frontend: tipos TypeScript generados con `openapi-typescript` desde el OpenAPI del backend.
 - **Regenerar tipos cada vez que backend cambia** — automatizar en CI antes del build del frontend.
 - No hardcodear tipos en frontend; siempre desde el contrato.
 
-### 2.5. Multi-tenant strict
+### 2.6. Multi-tenant strict
 
-Cada query a FalkorDB, Supabase o Redis lleva `tenant_id` resuelto del usuario logueado. Helper `tenant_scoped_query` en B1.
+Cada query a FalkorDB, Supabase o Redis lleva `tenant_id` resuelto del usuario logueado. En el grafo, el aislamiento es nativo por `graph_name` de GraphRAG-SDK mapeado a `tenant_id`.
 
 Tests E2E deben verificar que no hay leaks entre tenants. Esta es regla inviolable, no opcional.
 
-### 2.6. PENDIENTE DE JORGE
+### 2.7. PENDIENTE DE JORGE
 
 Cuando encuentres algo no resuelto en el modelado o en el Sprint Contract:
 
@@ -77,9 +81,9 @@ Cuando encuentres algo no resuelto en el modelado o en el Sprint Contract:
 - Sigue ejecutando lo demás que sí puedes.
 - En el reporte: lista todos los PENDIENTE DE JORGE en orden de criticidad.
 
-### 2.7. Decisiones cerradas que NO se re-validan
+### 2.8. Decisiones cerradas que NO se re-validan
 
-Las 15 decisiones del Paso C están cerradas. **No vuelvas a abrirlas.** Si un Sprint Contract menciona una decisión, asume que está tomada.
+Las 15 decisiones del Paso C están cerradas. La adenda post-PoC está cerrada. **No vuelvas a abrirlas.** Si un Sprint Contract menciona una decisión, asume que está tomada.
 
 Si genuinamente crees que una decisión está mal y tienes argumento técnico concreto: lo escribes en el reporte como "Observación técnica para Jorge" — pero **ejecutas igual** lo que dice el Sprint Contract. La decisión de cambiar es de Jorge, no tuya.
 
@@ -91,21 +95,55 @@ Si genuinamente crees que una decisión está mal y tienes argumento técnico co
 - Python 3.11
 - FastAPI + Pydantic v2
 - httpx + asyncio + uvicorn
-- Gestión de dependencias: `uv` (o `pip` con `pyproject.toml`)
+- Gestión de dependencias: `pyproject.toml` (+ `requirements.txt` / `requirements.docker.txt` mientras se completa la migración)
+
+### Arquitectura de ingesta — GraphRAG-SDK (CAMBIO MAYOR post-PoC)
+- **FalkorDB GraphRAG-SDK 1.1.1** es el motor de ingesta y construcción de grafo. **Reemplaza al DII anterior.**
+- El DII causó el incidente de $5,000 con Gemini (timeout 600s, workers reactivándose, escritura parcial, sin control de costo). NO se revive.
+- El SDK aporta: ingesta <5min sin timeouts, escritura transaccional, provenance nativo (`MENTIONED_IN`/`PART_OF`/`NEXT_CHUNK` + spans de caracteres), multi-tenancy por `graph_name`, `apply_changes()` incremental crash-safe con SHA-256, estrategias swappables, LLM-agnóstico vía LiteLLM.
+
+### Stack de ingesta multi-formato
+```
+Formatos diversos (docx, xlsx, pptx, imágenes, CFDI/XML, TMX/XLIFF/TBX/SDLXLIFF/Bilingual DOCX)
+    ↓
+Docling (conversión universal + OCR + tablas complejas y gráficos)
+    +
+LlamaIndex (indexación semántica sin schema rígido)
+    ↓
+GraphRAG-SDK 1.1.1
+    ↓
+FalkorDB (multi-tenant por graph_name)
+```
+GraphRAG-SDK ingiere nativamente PDF, Markdown y texto; Docling cubre el resto de formatos.
+
+### Config de modelos de ingesta (validada con PoC sobre NOM-052 — distinta del MR de traducción)
+- **Extracción:** Gemini 2.5 Flash — `gemini/gemini-2.5-flash` vía LiteLLM. **El prefijo `gemini/` es OBLIGATORIO**, o LiteLLM defaultea a Vertex AI y falla pidiendo credenciales GCP.
+- **QA / consulta:** gpt-4o-mini.
+- **Resolution:** Gemini 2.5 Flash (LLMVerifiedResolution).
+- **Post-proceso:** `deduplicate_entities(fuzzy=True)` para entidades de alto volumen.
+- **Variables:** `GEMINI_API_KEY` (NO `GOOGLE_API_KEY`), `OPENAI_API_KEY`.
+- Evidencia: Gemini 2.5 Flash infiere sujetos implícitos de voz pasiva regulatoria ("deberán identificarse..." → Generador). Extrajo 15 obligaciones vs 4 de gpt-4o, a costo de gpt-4o-mini (~$0.04/doc).
+
+### Sistema de esquemas por tipo documental — COMPONENTE CENTRAL
+El schema de extracción debe corresponder al **TIPO de documento + contexto del usuario**, no solo al dominio. Evidencia PoC: un schema de norma técnica (NOM-052) extrajo **0 relaciones** de una ley general (LGPGIR). Dos capas:
+1. **Catálogo del mercado meta** — todos los tipos presentes desde el diseño (NOM, ley, reglamento, ISO, manual técnico, MSDS, calibración, especificación, ficha técnica, memoria de traducción), todos ajustables por feedback de pilotos. Ninguno se descarta ni se difiere.
+2. **Generador dinámico (Gemini 2.5 Flash)** — analiza documento + contexto de usuario y deriva el schema cuando no calza con el catálogo, en vez de fallar. Los schemas generados realimentan el catálogo.
+El tipo de documento define tanto el schema de extracción como la visualización (B8).
+
+### LLMs de traducción (vía Model Router existente — 4 tiers)
+- Claude Sonnet 4.6 + Gemini 2.5 Pro.
+- **Tier medio piloto para todo.** Ruteo por criticidad presente pero desactivado hasta primer cliente.
+- Esta config es SOLO para el flujo de traducción Pista A. NO confundir con la config de ingesta de arriba.
 
 ### Bases de datos
-- **FalkorDB**: PKG (Panohayan Knowledge Graph) + PTM (Panohayan Translation Memory). Self-hosted en Fly.io.
+- **FalkorDB**: DKG (Document Knowledge Graph) + DTM (Document Translation Memory). Self-hosted en Fly.io. Vía GraphRAG-SDK.
 - **Supabase (PostgreSQL)**: operacional + FAT spillover + auth.
 - **pgvector**: embeddings (extensión Supabase).
 - **Redis**: sesiones MO + scheduler backend APScheduler. Self-hosted en Fly.io.
 
-### LLMs (vía Model Router existente — 4 tiers)
-- Claude Sonnet 4.6
-- Gemini 2.5 Pro
-- **Tier medio piloto para todo.** Ruteo por criticidad presente pero desactivado hasta primer cliente.
-
 ### Embeddings
 - **BGE-M3 self-hosted** desde día 1. NO OpenAI text-embedding.
+- Se configura como embedder custom de GraphRAG-SDK (vía interfaz ABC del SDK o LiteLLM). El PoC usó OpenAI por simplicidad; NO invalida la decisión de BGE-M3.
 
 ### Matching fuzzy
 - Híbrido Levenshtein + BGE-M3 dos pasadas.
@@ -116,6 +154,11 @@ Si genuinamente crees que una decisión está mal y tienes argumento técnico co
 ### Alineadores Pista B
 - **Vecalign primario + Hunalign fallback.** Ambos día 1.
 
+### Cotizador pre-ingesta — CRÍTICO
+- tiktoken mide cada documento ANTES de ingerir, estima costo, verifica presupuesto disponible del tenant, pide confirmación.
+- El PoC demostró con incidente controlado (ingesta topó hard cap de Google a MXN 119) que NO es opcional.
+- Protección financiera: saldo prepagado finito sin auto-recharge + hard cap + cotizador.
+
 ### Frontend
 - TypeScript estricto
 - Next.js 15 App Router + React 19
@@ -124,7 +167,7 @@ Si genuinamente crees que una decisión está mal y tienes argumento técnico co
 - react-i18next (independiente del framework)
 
 ### Hosting
-- **Fly.io**: backend + FalkorDB + Redis.
+- **Fly.io**: backend + FalkorDB + Redis. App: `docyan-lde-api`.
 - **Vercel**: frontend (las 4 UIs).
 
 ### WhatsApp
@@ -139,24 +182,29 @@ Si genuinamente crees que una decisión está mal y tienes argumento técnico co
 
 | Sigla | Significado | Notas |
 |---|---|---|
-| **PKG** | Panohayan Knowledge Graph | Sobre FalkorDB. Multi-tenant strict. |
-| **PTM** | Panohayan Translation Memory | Sobre FalkorDB. Segregación estricta por par lingüístico. **No es TM tradicional.** |
-| **DLE** | Document Localization Engine | El producto completo. |
-| **MO** | Master Orchestrator | Pieza central. Doc 05. |
-| **DII** | Document Ingestion Intelligence | Existe 1,759 líneas en repo. NO reescribir. |
+| **DKG** | Document Knowledge Graph | Sobre FalkorDB vía GraphRAG-SDK. Multi-tenant strict por `graph_name`. (Antes PKG.) |
+| **DTM** | Document Translation Memory | Sobre FalkorDB. Segregación estricta por par lingüístico. **No es TM tradicional.** (Antes PTM.) |
+| **LDE** | Live Document Environment | El producto completo. (Antes DLE — Document Localization Engine.) |
+| **MO** | Master Orchestrator | Pieza central. Doc 05. Orquesta el negocio; la ingesta interna la cubre el SDK. |
+| **DII** | Document Ingestion Intelligence | **OBSOLETO. Reemplazado por GraphRAG-SDK.** Se marca deprecated en B1, se elimina tras B5. NO construir sobre él. |
 | **EDB** | Entity Data **Brain** | Almacén **activo** que propone. **NO** "Entity Database". |
-| **GRG** | Guardrail Governance | Existe 307 líneas. Extendido en doc 07. |
-| **FAT** | Foundation Audit Trail | Existe 196 líneas. Extendido en doc 08. |
-| **MR** | Model Router | Existe 135 líneas. 4 tiers. |
+| **GRG** | Guardrail Governance | Existe en repo. Extendido en doc 07 (B6, con hash chain). |
+| **FAT** | Foundation Audit Trail | Existe en repo (`matrix.py`/`TraceabilityMatrix`). Extendido en doc 08 (B6) con SHA-256 hash chain. |
+| **MR** | Model Router | Existe (98 LOC, 4 tiers, con tests). Se mantiene. Para traducción, no para ingesta. |
 | **RI** | Resilient Infrastructure | — |
-| **CAT** | Computer-Aided Translation | **Referencia comparativa, NO stack de Panohayan.** Trados/MemoQ/Phrase/XTM/SmartCAT. |
+| **GraphRAG-SDK** | FalkorDB GraphRAG-SDK 1.1.1 | Motor de ingesta y grafo. Reemplaza DII. |
+| **CAT** | Computer-Aided Translation | **Referencia comparativa, NO stack de DOCYAN.** Trados/MemoQ/Phrase/XTM/SmartCAT. |
 
 ### Cosas eliminadas (no las uses)
 
-- ❌ **Kiuey**: alucinación de Gemini en exploración inicial. Cualquier referencia a Kiuey en código o docs es bug, debe limpiarse.
+- ❌ **Panohayan**: nombre anterior. Toda ocurrencia en código/docs es deuda de rebrand a DOCYAN.
+- ❌ **PKG / PTM**: siglas anteriores. Ahora DKG / DTM.
+- ❌ **DII como pipeline activo**: reemplazado por GraphRAG-SDK. Marcar deprecated, no extender.
+- ❌ **Kiuey**: alucinación de Gemini en exploración inicial. Cualquier referencia es bug, debe limpiarse.
 - ❌ **Rol "Traductor humano"**: ELIMINADO del modelo de roles. El Motor de Traducción ocupa esa función. Los humanos en el flujo son **revisores**, no traductores.
-- ❌ **"TM tradicional"**: Panohayan PTM es grafo ontológico, no una TM convencional. No la trates como una.
+- ❌ **"TM tradicional"**: DOCYAN DTM es grafo ontológico, no una TM convencional. No la trates como una.
 - ❌ **"Entity Database"**: es Entity Data **Brain**. Almacén activo.
+- ❌ **Railway**: hosting anterior. Migrado a Fly.io. `railway.toml` se elimina en B0.
 
 ---
 
@@ -164,7 +212,7 @@ Si genuinamente crees que una decisión está mal y tienes argumento técnico co
 
 | # | Decisión | Compromiso |
 |---|---|---|
-| 1 | Embeddings | BGE-M3 self-hosted desde día 1 |
+| 1 | Embeddings | BGE-M3 self-hosted desde día 1 (embedder custom de GraphRAG-SDK) |
 | 2 | Matching fuzzy | Híbrido Levenshtein + BGE-M3, score 70/30 altas, 30/70 bajas, umbral léxico ≥30% |
 | 3 | Scheduler | APScheduler + Redis |
 | 4 | Alineador Pista B | Vecalign primario + Hunalign fallback |
@@ -175,27 +223,27 @@ Si genuinamente crees que una decisión está mal y tienes argumento técnico co
 | 8 | WhatsApp BSP | 360dialog directo, sin markup |
 | 9 | Framework frontend | Next.js 15 App Router + React 19 + Tailwind |
 | 10 | Componentes UI | shadcn/ui sobre Radix Primitives |
-| 11 | Versionado PKG | In-place + aristas `:VERSION_HISTORICA` |
+| 11 | Versionado DKG | In-place + aristas `:VERSION_HISTORICA` |
 | 12 | Backup FalkorDB | RPO 15min, RTO 4h, retención 7 años producción / 3 años operativo |
 | 13 | Pricing | Mantener precios actuales hasta primer cliente real |
 | 14 | Testing | Balanceado 60-70% backend / 40-50% frontend, CI GitHub Actions |
-| 15 | Criticidad por segmento | OBLIGATORIA en Onboarding Step 9, delegable a "DII infiere automática" |
+| 15 | Criticidad por segmento | OBLIGATORIA en Onboarding Step 9, delegable a inferencia automática del pipeline |
 
 ---
 
-## 6. Plan de 14 bloques (Paso D)
+## 6. Plan de 14 bloques (Paso D, actualizado post-PoC — ver `docs/Plan_Desarrollo_MVP_DOCYAN_v2_postPoC.md`)
 
 | # | Bloque | Salida verificable |
 |---|---|---|
-| B0 | Fundación + migración | Repo en Fly.io + Vercel, tests pasando en CI |
-| B1 | PKG | Schema FalkorDB multi-tenant + versionado |
-| B2 | PTM | Schema PTM + segregación por par + TM dual + lock |
-| B3 | MO + Tokens QR | QR escaneable resuelve a contexto |
-| B4 | Motor Traducción Rigurosa (Pista A) | Doc traducido en formato original con scoring |
+| B0 | Fundación + migración + rebrand | Repo `docyan-lde-core` en Fly.io + Vercel, frontend bootstrapeado, tests en CI, rebrand total |
+| B1 | DKG sobre GraphRAG-SDK + sistema de esquemas | Schema multi-tenant + versionado + catálogo del mercado meta + generador dinámico |
+| B2 | DTM | Schema DTM + segregación por par + TM dual + lock terminológico |
+| B3 | MO + Tokens QR + Cotizador | QR resuelve a contexto + cotizador pre-ingesta funcional |
+| B4 | Motor Traducción Rigurosa (Pista A) | Doc traducido en formato original con scoring + lock activo |
 | B5 | Ingesta Bilingüe (Pista B) | Agencia carga TMX/XLIFF, ingiere correctamente |
-| B6 | GRG + FAT extendidos | Reglas + cadena criptográfica + reportes |
-| B7 | Clasificador Intención + Pipelines 1-8 | Consulta clasifica y ejecuta pipeline correcto |
-| B8 | UI #1 Consulta Operativa PWA | Operador consulta vía PWA con renderización condicional |
+| B6 | GRG + FAT extendidos | Reglas + cadena criptográfica SHA-256 + reportes |
+| B7 | Clasificador Intención + Pipelines 1-8 + Chat persistente | Consulta clasifica y ejecuta pipeline correcto; chat multi-turno |
+| B8 | UI #1 Consulta PWA + Visualizaciones + Anotaciones + Alertas | Operador consulta vía PWA, renderización condicional, alertas administrativas |
 | B9 | WhatsApp + Channel Adapter | Operador consulta vía WhatsApp en su idioma |
 | B10 | UI #2 Revisión Lingüística | Revisor humano valida documento completo |
 | B11 | UI #3 PM Dashboard | PM gestiona proyectos, asigna revisores, cotiza |
@@ -204,36 +252,46 @@ Si genuinamente crees que una decisión está mal y tienes argumento técnico co
 
 Paralelismos posibles: B4↔B5, B6 paralelo a B4/B5, B8↔B10.
 
+**MVP demo-able** = B0+B1+B2+B3+B4+B6+B7+B8+B12. Hasta entonces, silencio comercial (ver sección 12).
+
 ---
 
-## 7. Estructura del repo
+## 7. Estructura del repo (estado real, paquete `app`)
 
 ```
 /
-├── apps/
-│   ├── consulta/             # UI #1 PWA (B8)
-│   ├── reviewer/             # UI #2 Revisión Lingüística (B10)
-│   ├── pm-dashboard/         # UI #3 PM Dashboard (B11)
-│   └── onboarding/           # UI #4 Onboarding Wizard (B12)
-├── panohayan/                # Backend Python (paquete principal)
-│   ├── dii/                  # Document Ingestion Intelligence (existente)
-│   ├── edb/                  # Entity Data Brain (existente)
-│   ├── grg/                  # Guardrail Governance (existente, extendido en B6)
-│   ├── fat/                  # Foundation Audit Trail (existente, extendido en B6)
-│   ├── mr/                   # Model Router (existente)
-│   ├── ri/                   # Resilient Infrastructure (existente)
-│   ├── pkg/                  # PKG client (B1)
-│   ├── ptm/                  # PTM client (B2)
-│   ├── mo/                   # Master Orchestrator (B3)
-│   ├── pipelines/            # Pipelines por intent type (B4, B5, B7)
-│   ├── channels/             # Channel adapters (B9: WhatsApp)
+├── frontend/                 # Workspace Next.js 15 (B0 bootstrap; UIs B8/B10/B11/B12)
+│   ├── src/app/(consulta)/   # UI #1 PWA (B8)
+│   ├── src/app/(revision)/   # UI #2 Revisión Lingüística (B10)
+│   ├── src/app/(pm)/         # UI #3 PM Dashboard (B11)
+│   └── src/app/(onboarding)/ # UI #4 Onboarding Wizard (B12)
+├── app/                      # Backend Python (paquete principal — NO "panohayan", NO "docyan")
+│   ├── core/                 # dii.py (deprecated), edb.py, grg.py, mr.py, intent.py, matrix.py, ri.py
+│   ├── graph/                # docyan_graph.py (fachada GraphRAG-SDK), schemas/, versioning, multitenancy (B1/B2)
+│   ├── schemas_documentales/ # catalogo/ + generador.py + registry.py (B1)
+│   ├── translation/          # motor, scoring, tm_dual, lock_terminologico, fuzzy_matching (B2/B4)
+│   ├── orchestrator/         # master_orchestrator, session_manager, scheduler, governance_gate (B3)
+│   ├── qr/                   # qr_generator, qr_resolver (B3)
+│   ├── ingesta/              # cotizador.py (B3)
+│   ├── ingesta_bilingue/     # parsers/, alineadores/, pipeline (B5)
+│   ├── governance/           # grg_extendido (B6)
+│   ├── audit/                # fat_extendido + hash chain, integrity_checker, reports (B6)
+│   ├── intent/               # clasificador, pipelines/, chat_persistente (B7)
+│   ├── alerts/               # safety_validator (B8 — línea ABSOLUTA)
+│   ├── channels/             # whatsapp_360dialog, channel_adapter (B9)
+│   ├── llm/                  # litellm_config (B1)
+│   ├── embeddings/           # bge_client.py (existente)
+│   ├── cache/                # redis_client.py (existente, evoluciona en B3)
+│   ├── connectors/           # 37 conectores (existentes — no foco MVP)
 │   └── api/                  # FastAPI routers
-├── scripts/                  # Utilidades operativas
-├── docs/                     # Documentación interna del repo (runbooks, etc.)
+├── scripts/                  # Utilidades operativas (rename, backup FalkorDB, etc.)
+├── docs/                     # Plan v2, sprints/, adenda post-PoC, arquitectura/ (00-14), runbooks
+├── migrations/               # SQL migrations (8 tablas + hash chain)
 ├── tests/                    # Tests backend (pytest)
 ├── .github/workflows/        # GitHub Actions CI
 ├── Dockerfile                # Backend container
-├── fly.toml                  # Fly.io config
+├── fly.toml                  # Fly.io config (app docyan-lde-api)
+├── vercel.json               # Vercel config (frontend)
 ├── pyproject.toml            # Deps Python
 └── CLAUDE.md                 # Este archivo
 ```
@@ -245,7 +303,7 @@ Paralelismos posibles: B4↔B5, B6 paralelo a B4/B5, B8↔B10.
 ### Python
 - Type hints obligatorios en funciones públicas.
 - Pydantic v2 para schemas de API.
-- `async`/`await` por default en handlers FastAPI.
+- `async`/`await` por default en handlers FastAPI. **Cuidado con funciones async sin await** (el PoC dejó `finalize()` y `deduplicate_entities()` async sin await — corregir al integrar).
 - Docstrings en español o inglés (consistente por módulo).
 - `ruff` + `black` configurados; formatear antes de commit.
 - Variables de entorno via `pydantic-settings`.
@@ -259,11 +317,11 @@ Paralelismos posibles: B4↔B5, B6 paralelo a B4/B5, B8↔B10.
 
 ### Commits
 - Conventional commits: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`.
-- Referenciar bloque cuando aplique: `feat(B2): add PTM segment versioning`.
+- Referenciar bloque cuando aplique: `feat(B2): add DTM segment versioning`.
 
 ### Branches
 - `main`: producción.
-- `develop` o feature branches por sprint: `sprint/B2-ptm`.
+- `develop` o feature branches por sprint: `sprint/B2-dtm`.
 
 ---
 
@@ -273,22 +331,26 @@ Documentadas en `.env.example`. Las críticas:
 
 ```
 # Auth
-JWT_SECRET=<random 64+ chars>
+JWT_SECRET=<random 64+ chars — NO defaults inseguros>
 SUPABASE_URL=
-SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_KEY=
+SUPABASE_SERVICE_KEY=
 
 # Databases
 FALKORDB_HOST=
 FALKORDB_PORT=
+FALKORDB_GRAPH=docyan
 REDIS_URL=
 
-# LLMs (vía Model Router)
+# LLMs de traducción (vía Model Router)
 ANTHROPIC_API_KEY=
-GOOGLE_AI_API_KEY=
+
+# LLMs de ingesta (GraphRAG-SDK vía LiteLLM)
+GEMINI_API_KEY=        # NO GOOGLE_API_KEY
+OPENAI_API_KEY=        # gpt-4o-mini para QA
 
 # Embeddings (BGE-M3 self-hosted)
-BGE_M3_ENDPOINT=
+BGE_M3_URL=
 
 # WhatsApp
 WA_360DIALOG_API_KEY=
@@ -297,17 +359,17 @@ WA_360DIALOG_WEBHOOK_SECRET=
 # Sentry (B13)
 SENTRY_DSN=
 
-# CORS
-ALLOWED_ORIGINS=https://consulta.panohayan.com,https://reviewer.panohayan.com,...
+# CORS (por dominio, NO wildcard en producción)
+ALLOWED_ORIGINS=https://consulta.docyan.com,https://reviewer.docyan.com,...
 ```
 
-**NO commitear secrets.** `gitleaks` corre en CI.
+**NO commitear secrets.** `gitleaks` corre en CI. La auditoría abril detectó `JWT_SECRET` default inseguro y dev API key hardcodeada — NO se repiten.
 
 ---
 
 ## 10. Política de auditoría / FAT
 
-Cada acción significativa en el sistema dispara un evento FAT (Foundation Audit Trail) con SHA-256 hash chain.
+Cada acción significativa dispara un evento FAT (Foundation Audit Trail) con SHA-256 hash chain (construido en B6 — el `matrix.py` actual NO tiene hash chain todavía).
 
 9 familias de eventos (definidas en B6):
 - `consulta` — consultas operativas.
@@ -315,7 +377,7 @@ Cada acción significativa en el sistema dispara un evento FAT (Foundation Audit
 - `ingesta` — carga de documentos / pares Pista B.
 - `governance` — cambios de configuración GRG, lock, etc.
 - `troubleshooting` — sesiones Tipo 5.
-- `alertas` — disparos de Tipo 7.
+- `alertas` — disparos de Tipo 7 (solo administrativas — ver sección 11.1).
 - `onboarding` — flujo de UI #4.
 - `system` — operaciones internas (webhook failures, scheduler runs).
 - `auth` — login, logout, password reset.
@@ -340,6 +402,10 @@ NOM-018-STPS-2015, NOM-026-STPS-2008, LFT Art. 132, NOM-035-STPS-2018, IATF 1694
 - Lock terminológico ≠ feature cosmética. Es diferenciador defendible vs CAT tools.
 - Multi-tenant strict ≠ paranoia. Es contractual con clientes regulados.
 
+### 11.1. Línea de seguridad regulatoria — ABSOLUTA
+
+Las alertas del sistema deben ser **SOLO administrativas** (vencimientos, faltantes, fechas de calibración, documentos por expirar), **NUNCA decisiones clínicas u operativas** que sugieran qué hacer. Una alerta que sugiera decisión clínica entra en software como dispositivo médico (SaMD), regulación COFEPRIS/FDA, responsabilidad por mala praxis. **Esta línea no se cruza.** DOCYAN es capa de conocimiento, no sistema de registro primario de datos médicos. En B8 se codifica como `safety_validator` que rechaza cualquier alerta con sugerencia clínica/operativa — es requisito legal con cobertura de tests crítica, no opcional.
+
 ---
 
 ## 12. Contexto comercial — REGLA OPERATIVA INVIOLABLE
@@ -352,11 +418,11 @@ Contactos referidos en project knowledge (NO acción):
 - México: Laboratorio Estándar, Daniel Calderón (Intermex Juárez), Elías Chacón (T-Hub), Sergio León.
 - Internacional: Hafida Santoudy (NY), Sonia (Octagon Madrid, contacto Magna International).
 
+Nota sobre pilotos: si se considera una clínica como piloto, NO como primer piloto por riesgo regulatorio de datos médicos (NOM-024-SSA3, posible HIPAA); empezar por documentación administrativa/de procesos, no expedientes de pacientes.
+
 ---
 
 ## 13. Cuando algo se rompa
-
-Orden de escalamiento:
 
 1. **Diagnóstico real**: lee logs, ejecuta tests, inspecciona estado real. **NO supongas.**
 2. **Verdad operacional**: si está roto, di que está roto. No "debería funcionar después de reiniciar".
@@ -369,7 +435,7 @@ Orden de escalamiento:
 ## 14. Identidad del proyecto
 
 - **Empresa**: XCID SA de CV
-- **Producto**: Panohayan DLE™
+- **Producto**: DOCYAN LDE™ (Live Document Environment) — antes Panohayan DLE™
 - **Fundador**: Jorge Luis Amparán Hernández (25 años en corredor industrial T-MEC + industria traducción profesional internacional)
 - **Su corrección sobre flujos operativos es ley operativa, no opinable.**
 
@@ -383,12 +449,13 @@ Por orden de prioridad cuando algo entra en conflicto:
 
 1. **Mensaje directo de Jorge en la sesión actual.**
 2. **Sprint Contract activo** (lo que Jorge pega al inicio de la sesión).
-3. **Docs 00-14 del modelado arquitectónico** (en project knowledge de Jorge, pegados cuando aplica).
-4. **Este CLAUDE.md.**
-5. **Estado actual del código en main.**
+3. **Adenda post-PoC** (`docs/adenda_postPoC_28mayo2026.md`) + **Plan v2** (`docs/Plan_Desarrollo_MVP_DOCYAN_v2_postPoC.md`).
+4. **Docs 00-14 del modelado arquitectónico** (`docs/arquitectura/`, pegados cuando aplica).
+5. **Este CLAUDE.md.**
+6. **Estado actual del código en main.**
 
-Cuando hay conflicto entre 3 y 5 (modelado vs código existente): seguir el modelado. El código existente del repo previo (`delfa-bridge-core` migrado) tiene deuda técnica que se está limpiando bloque por bloque.
+Cuando hay conflicto entre modelado y código existente: seguir el modelado. El código existente del repo previo (`delfa-bridge-core` migrado) tiene deuda técnica que se está limpiando bloque por bloque. Cuando hay conflicto entre una decisión del Paso C y la adenda post-PoC: **gana la adenda** (está basada en PoC ejecutado), salvo marca de PENDIENTE DE JORGE.
 
 ---
 
-*XCID SA de CV — Panohayan DLE™ by XCID — Mayo 2026 — Confidencial.*
+*XCID SA de CV — DOCYAN LDE™ by XCID — Actualizado 28 mayo 2026 — Confidencial.*

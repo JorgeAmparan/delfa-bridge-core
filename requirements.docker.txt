@@ -1,6 +1,18 @@
-# Panohayan DLE — Docker dependencies (no macOS-only packages)
-# PyTorch CPU-only must be installed separately before this file:
+# ============================================================
+# DOCYAN LDE — by XCID — Docker dependencies
+# Actualizado 28 mayo 2026 — post-PoC GraphRAG-SDK
+# (no macOS-only packages: sin pyobjc, sin ocrmac)
+# ============================================================
+# PyTorch CPU-only se instala por separado ANTES de este archivo:
 #   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+# Necesario para BGE-M3 self-hosted (decisión #1). NO eliminar
+# salvo que BGE-M3 corra como servicio separado (evaluar en B13).
+# ------------------------------------------------------------
+# NOTA DE VERSIONES POST-PoC (resolver en B1 con el resolver real):
+#   graphrag-sdk / litellm / apscheduler sin pin fijo — los pinea
+#   Opus en B1 con lo que resuelva el entorno real. Sincronizado
+#   con requirements.txt.
+# ============================================================
 
 # Core framework
 fastapi==0.135.3
@@ -17,16 +29,34 @@ PyJWT==2.12.1
 # Supabase
 supabase==2.28.3
 
+# --- NUEVO post-PoC: arquitectura de ingesta ---
+graphrag-sdk          # FalkorDB GraphRAG-SDK 1.1.1 — reemplaza DII. Pin en B1.
+litellm               # LLM-agnóstico (prefijo gemini/ obligatorio). Pin en B1.
+apscheduler           # Scheduler backend Redis (decisión #3). Pin en B1.
+
 # LLM providers
 anthropic==0.87.0
 google-genai==1.70.0
+google-generativeai==0.8.6   # Gemini 2.5 Flash extracción + resolution (ingesta)
+openai==2.30.0               # gpt-4o-mini = QA del pipeline de ingesta (REPORTE_CONTRATO4). NO eliminar.
 
-# Document processing
+# Document processing + stack de ingesta multi-formato (adenda 5)
 docling==2.84.0
 langextract==1.2.0
+llama-index==0.14.19
+llama-index-core==0.14.19
 
-# Embeddings (BGE-M3 client)
+# Cotizador pre-ingesta (B3)
+tiktoken==0.12.0             # Faltaba en docker; requerido por cotizador. Agregado.
+
+# Reconstrucción de formato (B4)
+weasyprint                   # Reconstrucción PDF (doc 12). Pin en B4.
+python-pptx==1.0.2
+lxml==6.0.2
+
+# Embeddings (BGE-M3 client) — requiere torch (instalado aparte)
 httpx==0.28.1
+transformers==5.4.0          # BGE-M3 self-hosted. NO eliminar.
 
 # Database connectors
 SQLAlchemy==2.0.48
@@ -54,5 +84,10 @@ pandas==3.0.2
 openpyxl==3.1.5
 python-docx==1.2.0
 Jinja2==3.1.6
-tenacity==9.1.4
+tenacity==9.1.4              # retry rate limiting Gemini (1,506 retries multi-doc PoC)
 email-validator==2.2.0
+
+# ============================================================
+# Binarios externos (B5) — instalar vía apt/git en Dockerfile,
+# NO vía pip: vecalign, hunalign (alineadores Pista B).
+# ============================================================
