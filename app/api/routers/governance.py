@@ -1,6 +1,8 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from typing import Optional
+
 from app.api.auth import requiere_rol
 from app.core.grg import GovernanceGuardrails
 
@@ -39,9 +41,10 @@ async def crear_regla(
 @router.get("/rules")
 async def listar_reglas(ctx: dict = Depends(requiere_rol("admin", "editor", "viewer"))):
     """Lista todas las reglas activas de la organización."""
-    from supabase import create_client
-    from dotenv import load_dotenv
     import os
+
+    from dotenv import load_dotenv
+    from supabase import create_client
     load_dotenv()
 
     supabase = create_client(

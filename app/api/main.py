@@ -1,17 +1,19 @@
+import os
+
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from dotenv import load_dotenv
-from app.api.routers import documents, search, governance, trail, connectors, billing, chat
+from fastapi.staticfiles import StaticFiles
+
 from app.api.auth import router as auth_router
-import os
+from app.api.routers import billing, chat, connectors, documents, governance, search, trail
 
 load_dotenv()
 
 app = FastAPI(
-    title="Panohayan DLE™ API",
-    description="Intelligent Middleware for Enterprise AI | Panohayan DLE™",
+    title="DOCYAN LDE™ API",
+    description="Intelligent Middleware for Enterprise AI | DOCYAN LDE™",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
@@ -21,7 +23,7 @@ ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "")
 if not ALLOWED_ORIGINS:
     raise RuntimeError(
         "ALLOWED_ORIGINS environment variable is required "
-        "(comma-separated domains, e.g. https://app.panohayan.com,http://localhost:3000)"
+        "(comma-separated domains, e.g. https://app.docyan.com,http://localhost:3000)"
     )
 _origins = [o.strip() for o in ALLOWED_ORIGINS.split(",") if o.strip()]
 
@@ -49,8 +51,8 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 @app.get("/")
 async def root():
     return {
-        "product": "Panohayan DLE™",
-        "architecture": "Panohayan™",
+        "product": "DOCYAN LDE™",
+        "architecture": "DOCYAN™",
         "version": "1.0.0",
         "status": "operational",
         "docs": "/docs"

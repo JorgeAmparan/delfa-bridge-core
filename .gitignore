@@ -23,3 +23,9 @@ data/
 # Logs
 *.log
 .DS_Store
+
+# Node / frontend
+node_modules/
+
+# Artefacto intermedio del pipeline OpenAPI→TS
+openapi.json

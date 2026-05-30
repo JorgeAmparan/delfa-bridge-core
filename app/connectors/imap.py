@@ -1,16 +1,18 @@
-import os
 import email
 import imaplib
-import tempfile
+import os
 import shutil
+import tempfile
 from email.header import decode_header
-from app.core.matrix import TraceabilityMatrix
+
 from dotenv import load_dotenv
+
+from app.core.matrix import TraceabilityMatrix
 
 load_dotenv()
 
 
-# ─── IMAP CONNECTOR | Panohayan™ ────────────────────────────────────────────
+# ─── IMAP CONNECTOR | DOCYAN™ ────────────────────────────────────────────
 #
 # Extrae correos de cualquier servidor IMAP (genérico).
 # Procesa cuerpo + adjuntos a través del pipeline DII.

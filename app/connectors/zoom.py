@@ -1,14 +1,16 @@
 import os
-import tempfile
 import shutil
+import tempfile
+
+from dotenv import load_dotenv
+
 from app.connectors.api_base import APIConnector
 from app.core.matrix import TraceabilityMatrix
-from dotenv import load_dotenv
 
 load_dotenv()
 
 
-# ─── ZOOM CONNECTOR | Panohayan™ ────────────────────────────────────────────
+# ─── ZOOM CONNECTOR | DOCYAN™ ────────────────────────────────────────────
 #
 # Extrae grabaciones y transcripciones de Zoom via Server-to-Server OAuth.
 # Procesa transcripciones (VTT/texto) a través del pipeline DII.

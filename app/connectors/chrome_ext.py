@@ -1,8 +1,8 @@
 from app.connectors.webhook_base import WebhookConnector
 
-# ─── CHROME EXTENSION CONNECTOR | Panohayan™ ────────────────────────────────
+# ─── CHROME EXTENSION CONNECTOR | DOCYAN™ ────────────────────────────────
 #
-# Recibe datos capturados por la extensión de Chrome de Panohayan DLE™.
+# Recibe datos capturados por la extensión de Chrome de DOCYAN LDE™.
 # La extensión envía: texto seleccionado, HTML de página, o screenshots.
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -10,7 +10,7 @@ from app.connectors.webhook_base import WebhookConnector
 class ChromeExtConnector(WebhookConnector):
 
     CONNECTOR_NAME = "chrome_ext"
-    SECRET_ENV_VAR = None  # Usa auth estándar de Panohayan DLE™ (JWT)
+    SECRET_ENV_VAR = None  # Usa auth estándar de DOCYAN LDE™ (JWT)
 
     def extraer_contenido(self, payload: dict) -> str:
         """

@@ -1,12 +1,13 @@
 import os
 import sys
+
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# ─── PANOHAYAN™ ORCHESTRATOR ──────────────────────────────────────────────────
+# ─── DOCYAN™ ORCHESTRATOR ──────────────────────────────────────────────────
 #
-# Punto de entrada principal de Panohayan DLE™.
+# Punto de entrada principal de DOCYAN LDE™.
 # Coordina el pipeline completo:
 # DII → EDB → GRG → TM
 # Con Intent-A y Intent-B integrados en cada componente.
@@ -18,9 +19,9 @@ from app.core.grg import GovernanceGuardrails
 from app.core.matrix import TraceabilityMatrix
 
 
-class PanohayanOrchestrator:
+class DocyanOrchestrator:
     """
-    Orquestador principal de Panohayan™.
+    Orquestador principal de DOCYAN™.
     Ejecuta el pipeline completo para un conjunto de documentos.
     """
 
@@ -42,7 +43,7 @@ class PanohayanOrchestrator:
         4. TM  — registra resumen del pipeline
         """
         print("=" * 60)
-        print("  PANOHAYAN DLE™")
+        print("  DOCYAN DLE™")
         print(f"  Organización: {self.org_id}")
         print("=" * 60)
 
@@ -138,7 +139,7 @@ class PanohayanOrchestrator:
 # ─── CLI ──────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    orquestador = PanohayanOrchestrator()
+    orquestador = DocyanOrchestrator()
 
     # Modo: procesar o buscar
     if len(sys.argv) > 1 and sys.argv[1] == "buscar":
@@ -158,7 +159,7 @@ if __name__ == "__main__":
         resultados = orquestador.procesar_documentos(aplicar_grg=True)
 
         print("\n" + "=" * 60)
-        print("  RESUMEN FINAL PANOHAYAN™")
+        print("  RESUMEN FINAL DOCYAN™")
         print("=" * 60)
         print(f"  Documentos procesados : {resultados['documentos_procesados']}")
         print(f"  Entidades extraídas   : {resultados['entidades_extraidas']}")

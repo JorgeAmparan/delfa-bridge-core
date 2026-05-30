@@ -1,6 +1,6 @@
 from app.connectors.webhook_base import WebhookConnector
 
-# ─── BUBBLE PLUGIN CONNECTOR | Panohayan™ ───────────────────────────────────
+# ─── BUBBLE PLUGIN CONNECTOR | DOCYAN™ ───────────────────────────────────
 #
 # Recibe datos desde apps Bubble.io via API.
 # Bubble envía JSON con datos del workflow/data thing.
@@ -10,7 +10,7 @@ from app.connectors.webhook_base import WebhookConnector
 class BubbleConnector(WebhookConnector):
 
     CONNECTOR_NAME = "bubble"
-    SECRET_ENV_VAR = None  # Usa auth estándar de Panohayan DLE™
+    SECRET_ENV_VAR = None  # Usa auth estándar de DOCYAN LDE™
 
     def extraer_contenido(self, payload: dict) -> str:
         """

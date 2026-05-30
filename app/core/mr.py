@@ -1,9 +1,10 @@
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# ─── MODEL ROUTER | Panohayan™ ────────────────────────────────────────────────
+# ─── MODEL ROUTER | DOCYAN™ ────────────────────────────────────────────────
 #
 # Selecciona el LLM más costo-eficiente según complejidad del documento.
 # Agnóstico de proveedor — soporta Google, Anthropic y OpenAI.
@@ -44,7 +45,7 @@ MODELOS = {
 
 class ModelRouter:
     """
-    MR — Model Router | Panohayan™
+    MR — Model Router | DOCYAN™
     Selecciona el LLM óptimo por costo-eficiencia según:
     - Tamaño del documento (chars)
     - Presencia de tablas
@@ -115,7 +116,7 @@ model_router = ModelRouter()
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("  MR — Model Router | Panohayan™")
+    print("  MR — Model Router | DOCYAN™")
     print("=" * 60)
 
     mr = ModelRouter()

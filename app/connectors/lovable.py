@@ -1,16 +1,16 @@
 from app.connectors.webhook_base import WebhookConnector
 
-# ─── LOVABLE PLUGIN CONNECTOR | Panohayan™ ──────────────────────────────────
+# ─── LOVABLE PLUGIN CONNECTOR | DOCYAN™ ──────────────────────────────────
 #
 # Recibe datos desde apps generadas con Lovable (ex-GPT Engineer).
-# Lovable apps envían JSON via fetch/axios al endpoint de Panohayan DLE™.
+# Lovable apps envían JSON via fetch/axios al endpoint de DOCYAN LDE™.
 # ─────────────────────────────────────────────────────────────────────────────
 
 
 class LovableConnector(WebhookConnector):
 
     CONNECTOR_NAME = "lovable"
-    SECRET_ENV_VAR = None  # Usa auth estándar de Panohayan DLE™
+    SECRET_ENV_VAR = None  # Usa auth estándar de DOCYAN LDE™
 
     def extraer_contenido(self, payload: dict) -> str:
         """

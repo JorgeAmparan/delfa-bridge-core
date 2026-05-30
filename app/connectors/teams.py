@@ -1,14 +1,16 @@
 import os
-import tempfile
 import shutil
+import tempfile
+
+from dotenv import load_dotenv
+
 from app.connectors.msgraph_base import MSGraphConnector
 from app.core.matrix import TraceabilityMatrix
-from dotenv import load_dotenv
 
 load_dotenv()
 
 
-# ─── MICROSOFT TEAMS CONNECTOR | Panohayan™ ─────────────────────────────────
+# ─── MICROSOFT TEAMS CONNECTOR | DOCYAN™ ─────────────────────────────────
 #
 # Extrae mensajes y archivos de canales de Microsoft Teams via Graph API.
 # Hereda de MSGraphConnector (auth Azure AD con msal).
@@ -109,7 +111,6 @@ class TeamsConnector(MSGraphConnector):
             data = self._graph_get(
                 f"/teams/{team_id}/channels/{channel_id}/filesFolder"
             )
-            folder_url = data.get("webUrl", "")
             drive_id = data.get("parentReference", {}).get("driveId", "")
             item_id = data.get("id", "")
 

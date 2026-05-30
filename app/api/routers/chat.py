@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
+
 from app.api.auth import requiere_rol
 from app.core.ri import ResponseIntelligence
 

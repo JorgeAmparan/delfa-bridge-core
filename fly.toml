@@ -1,4 +1,4 @@
-app = "panohayan-dle-api"
+app = "docyan-lde-api"
 primary_region = "mia"
 
 [build]

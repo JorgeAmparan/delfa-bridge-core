@@ -1,7 +1,9 @@
 import os
 import time
+
 from dotenv import load_dotenv
-from supabase import create_client, Client
+from supabase import Client, create_client
+
 from app.core.matrix import TraceabilityMatrix
 
 load_dotenv()
@@ -9,7 +11,7 @@ load_dotenv()
 
 class GovernanceGuardrails:
     """
-    GRG — Governance Guardrails | Panohayan™
+    GRG — Governance Guardrails | DOCYAN™
     Evalúa entidades contra reglas configurables por organización.
     Aprueba, marca, redacta o manda a cuarentena según políticas.
     """
@@ -268,7 +270,7 @@ class GovernanceGuardrails:
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("  GRG — Governance Guardrails | Panohayan™")
+    print("  GRG — Governance Guardrails | DOCYAN™")
     print("=" * 60)
 
     grg = GovernanceGuardrails()

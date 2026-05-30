@@ -1,11 +1,12 @@
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
 
 FALKORDB_HOST = os.getenv("FALKORDB_HOST", "localhost")
 FALKORDB_PORT = int(os.getenv("FALKORDB_PORT", "6379"))
-FALKORDB_GRAPH = os.getenv("FALKORDB_GRAPH", "panohayan")
+FALKORDB_GRAPH = os.getenv("FALKORDB_GRAPH", "docyan")
 
 
 class FalkorDBClient:

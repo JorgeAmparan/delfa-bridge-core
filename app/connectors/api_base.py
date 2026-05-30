@@ -1,15 +1,17 @@
 import os
-import tempfile
 import shutil
-import requests
+import tempfile
 from abc import ABC, abstractmethod
+
+import requests
 from dotenv import load_dotenv
+
 from app.core.matrix import TraceabilityMatrix
 
 load_dotenv()
 
 
-# ─── API CONNECTOR BASE | Panohayan™ ────────────────────────────────────────
+# ─── API CONNECTOR BASE | DOCYAN™ ────────────────────────────────────────
 #
 # Clase base para conectores que extraen datos via REST API.
 # Patrón: autenticarse → listar/extraer → texto estructurado → DII pipeline.

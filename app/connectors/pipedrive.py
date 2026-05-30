@@ -1,7 +1,8 @@
 import os
+
 from app.connectors.api_base import APIConnector
 
-# ─── PIPEDRIVE CONNECTOR | Panohayan™ ───────────────────────────────────────
+# ─── PIPEDRIVE CONNECTOR | DOCYAN™ ───────────────────────────────────────
 #
 # Extrae deals, persons y organizations de Pipedrive via API v1.
 # Usa API Token (query parameter).

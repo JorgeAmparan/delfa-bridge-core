@@ -1,0 +1,39 @@
+# ============================================================
+# requirements.test.txt — dependencias mínimas para CORRER LOS TESTS en CI.
+# Subconjunto verificado del stack que produce los 88 tests en verde localmente
+# (61 backend core + 27 migraciones). Versiones alineadas con el venv validado.
+#
+# NO es el runtime completo (ese vive en requirements.docker.txt / requirements.txt).
+# El resolver completo del stack frozen (graphrag-sdk/litellm) se cierra en B1.
+# ============================================================
+
+# --- API / runtime que los tests importan ---
+fastapi==0.136.3
+uvicorn==0.48.0
+pydantic==2.13.4
+pydantic-settings==2.14.1
+httpx==0.28.1
+PyJWT==2.13.0
+bcrypt==5.0.0
+python-multipart==0.0.29
+email-validator==2.3.0
+python-dotenv==1.2.2
+supabase==2.30.0
+SQLAlchemy==2.0.50
+redis==8.0.0
+stripe==15.2.0
+
+# --- Pipeline de ingesta (importado por app.core.dii / intent / ri) ---
+google-genai==2.7.0
+langextract==1.5.0
+docling==2.96.0
+llama-index==0.14.22
+
+# --- Tests de migración sobre PostgreSQL + pgvector ---
+psycopg[binary]==3.3.4
+
+# --- Toolchain de test ---
+pytest==9.0.3
+pytest-asyncio==1.4.0
+pytest-cov
+ruff

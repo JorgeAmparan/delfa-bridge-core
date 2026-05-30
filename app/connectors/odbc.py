@@ -1,13 +1,15 @@
 import os
-import tempfile
 import shutil
-from app.core.matrix import TraceabilityMatrix
+import tempfile
+
 from dotenv import load_dotenv
+
+from app.core.matrix import TraceabilityMatrix
 
 load_dotenv()
 
 
-# ─── ODBC CONNECTOR | Panohayan™ ────────────────────────────────────────────
+# ─── ODBC CONNECTOR | DOCYAN™ ────────────────────────────────────────────
 #
 # Conector ODBC genérico para bases de datos legacy.
 # Soporta cualquier BD con driver ODBC instalado.

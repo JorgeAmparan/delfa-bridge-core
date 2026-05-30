@@ -1,10 +1,11 @@
 import os
-import hashlib
+
 from dotenv import load_dotenv
-from supabase import create_client, Client
-from app.embeddings.bge_client import bge_client, BGE_M3_DIMS
+from supabase import Client, create_client
+
 from app.core.intent import QueryIntentAnalyzer
 from app.core.matrix import TraceabilityMatrix
+from app.embeddings.bge_client import BGE_M3_DIMS, bge_client
 
 load_dotenv()
 
@@ -190,7 +191,7 @@ if __name__ == "__main__":
     edb = EntityDataBrain()
 
     print("=" * 60)
-    print("  EDB Lite — Entity Data Brain | Panohayan™")
+    print("  EDB Lite — Entity Data Brain | DOCYAN™")
     print("=" * 60)
 
     # Resumen actual
@@ -210,17 +211,17 @@ if __name__ == "__main__":
     resultado = edb.supabase.table("entities").select(
         "id, entity_class, entity_value"
     ).eq("org_id", edb.org_id).is_("embedding", "null").execute()
-    
+
     pendientes = resultado.data
     print(f"  Entidades sin embedding: {len(pendientes)}")
-    
+
     for entidad in pendientes[:5]:  # Todas
         edb.store_embedding(
             entity_id=entidad["id"],
             entity_class=entidad["entity_class"],
             entity_value=entidad["entity_value"]
         )
-    
+
     # Búsqueda semántica
     queries = [
         "quién firma el contrato",

@@ -1,13 +1,13 @@
-import os
-from app.connectors.erp_mexicano_base import ERPMexicanoDBBase, ERPMexicanoFileBase
 from dotenv import load_dotenv
+
+from app.connectors.erp_mexicano_base import ERPMexicanoDBBase, ERPMexicanoFileBase
 
 load_dotenv()
 
 
-# ─── ASPEL CONNECTOR | Panohayan™ ───────────────────────────────────────────
+# ─── ASPEL CONNECTOR | DOCYAN™ ───────────────────────────────────────────
 #
-# Conecta Panohayan DLE™ a Aspel SAE / COI / NOI.
+# Conecta DOCYAN LDE™ a Aspel SAE / COI / NOI.
 # Patrón dual:
 #   Opción A — Conexión directa a BD (SQL Server o Firebird según versión)
 #   Opción B — Archivos exportados (XML CFDI, CSV reportes)

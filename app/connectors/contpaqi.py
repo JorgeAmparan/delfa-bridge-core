@@ -1,13 +1,13 @@
-import os
-from app.connectors.erp_mexicano_base import ERPMexicanoDBBase, ERPMexicanoFileBase
 from dotenv import load_dotenv
+
+from app.connectors.erp_mexicano_base import ERPMexicanoDBBase, ERPMexicanoFileBase
 
 load_dotenv()
 
 
-# ─── CONTPAQI CONNECTOR | Panohayan™ ────────────────────────────────────────
+# ─── CONTPAQI CONNECTOR | DOCYAN™ ────────────────────────────────────────
 #
-# Conecta Panohayan DLE™ a CONTPAQi Comercial / Contabilidad.
+# Conecta DOCYAN LDE™ a CONTPAQi Comercial / Contabilidad.
 # Patrón dual:
 #   Opción A — Conexión directa a BD SQL Server (ODBC)
 #   Opción B — Archivos exportados (XML CFDI, CSV reportes, PDF)

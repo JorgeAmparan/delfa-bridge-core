@@ -1,6 +1,6 @@
 from app.connectors.webhook_base import WebhookConnector
 
-# ─── ZAPIER CONNECTOR | Panohayan™ ──────────────────────────────────────────
+# ─── ZAPIER CONNECTOR | DOCYAN™ ──────────────────────────────────────────
 #
 # Recibe datos desde Zaps de Zapier via webhook.
 # Zapier envía payload JSON plano con los campos del trigger/action.

@@ -1,16 +1,17 @@
-import os
-import io
 import base64
-import tempfile
+import os
 import shutil
+import tempfile
+
+from dotenv import load_dotenv
+
 from app.connectors.google_base import GoogleBaseConnector
 from app.core.matrix import TraceabilityMatrix
-from dotenv import load_dotenv
 
 load_dotenv()
 
 
-# ─── GMAIL CONNECTOR | Panohayan™ ───────────────────────────────────────────
+# ─── GMAIL CONNECTOR | DOCYAN™ ───────────────────────────────────────────
 #
 # Extrae correos y adjuntos de Gmail via API.
 # Procesa cuerpo de correo + archivos adjuntos a través del pipeline DII.

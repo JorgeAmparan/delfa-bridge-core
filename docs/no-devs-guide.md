@@ -1,34 +1,34 @@
-# Panohayan DLE™ — Guía de Implementación
+# DOCYAN LDE™ — Guía de Implementación
 > Para equipos sin experiencia técnica
 
 ---
 
-## ¿Qué es Panohayan DLE™?
+## ¿Qué es DOCYAN LDE™?
 
-Panohayan DLE™ conecta tus documentos empresariales con inteligencia artificial.
+DOCYAN LDE™ conecta tus documentos empresariales con inteligencia artificial.
 En lugar de buscar información manualmente en contratos, facturas y reportes,
-simplemente pregúntale a Panohayan DLE™ en lenguaje natural.
+simplemente pregúntale a DOCYAN LDE™ en lenguaje natural.
 
 **Ejemplo:**
 - ❌ Antes: Abrir 50 contratos para encontrar las fechas de vencimiento
-- ✅ Con Panohayan DLE™: "¿Cuáles contratos vencen este mes?" → respuesta inmediata
+- ✅ Con DOCYAN LDE™: "¿Cuáles contratos vencen este mes?" → respuesta inmediata
 
 ---
 
 ## ¿Cómo funciona?
 ```
-Tus documentos → Panohayan DLE™ → Respuestas inteligentes
+Tus documentos → DOCYAN LDE™ → Respuestas inteligentes
 ```
 
 1. **Subes tus documentos** — PDFs, Word, Excel, o conectas tu Google Drive
-2. **Panohayan DLE™ los procesa** — extrae toda la información relevante
+2. **DOCYAN LDE™ los procesa** — extrae toda la información relevante
 3. **Preguntas en lenguaje natural** — y obtienes respuestas precisas con trazabilidad
 
 ---
 
 ## Paso 1 — Obtén tu cuenta
 
-1. Ve a [panohayan.dle](https://panohayan.dle)
+1. Ve a [docyan.dle](https://docyan.dle)
 2. Selecciona tu plan
 3. Recibirás tu **API Key** por email
 
@@ -38,7 +38,7 @@ Tus documentos → Panohayan DLE™ → Respuestas inteligentes
 
 ### Opción A — Sube documentos directamente
 
-Ve al portal de Panohayan DLE™ y arrastra tus archivos.
+Ve al portal de DOCYAN LDE™ y arrastra tus archivos.
 Formatos soportados: PDF, Word (.docx), Excel (.xlsx)
 
 ### Opción B — Conecta Google Drive
@@ -50,7 +50,7 @@ Formatos soportados: PDF, Word (.docx), Excel (.xlsx)
 
 ### Opción C — Conecta MicroSip
 
-Si usas MicroSip ERP, Panohayan DLE™ se conecta directamente:
+Si usas MicroSip ERP, DOCYAN LDE™ se conecta directamente:
 1. Ve a **Conectores → MicroSip**
 2. Ingresa la dirección de tu servidor MicroSip
 3. Ingresa tu usuario y contraseña de MicroSip
@@ -87,7 +87,7 @@ Ve a **Gobernanza → Nueva Regla** para configurar las tuyas.
 
 ## Trazabilidad total
 
-Cada respuesta de Panohayan DLE™ incluye:
+Cada respuesta de DOCYAN LDE™ incluye:
 - **Fuente** — de qué documento viene la información
 - **Fecha** — cuándo fue procesada
 - **Componente** — qué parte del sistema la procesó
@@ -99,10 +99,10 @@ Esto garantiza que nunca habrá respuestas inventadas.
 ## Soporte
 
 ¿Necesitas ayuda? Contáctanos:
-- Email: soporte@panohayan.dle
+- Email: soporte@docyan.dle
 - WhatsApp: +52 656 XXX XXXX
 
 ---
 
-*Panohayan DLE™ — Tu empresa, más inteligente*
-*Powered by Panohayan™*
+*DOCYAN LDE™ — Tu empresa, más inteligente*
+*Powered by DOCYAN™*

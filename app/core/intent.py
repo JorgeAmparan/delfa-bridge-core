@@ -1,12 +1,15 @@
-import os
 import json
+import os
+
 from dotenv import load_dotenv
 from google import genai
 
 load_dotenv()
 
-# Configura Gemini con nuevo SDK
-client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+# Configura Gemini con nuevo SDK.
+# Variable canónica GEMINI_API_KEY (adenda §5); GOOGLE_API_KEY es compat deprecado
+# (se retira con el DII en B1).
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
 GEMINI_MODEL = "gemini-2.5-flash"
 
 # ── Tipos de documento conocidos ─────────────────────────────────────────────
@@ -217,7 +220,7 @@ Responde ÚNICAMENTE con un JSON válido:
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("  Intent Analyzer | Panohayan™")
+    print("  Intent Analyzer | DOCYAN™")
     print("=" * 60)
 
     # Test Tipo A

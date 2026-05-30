@@ -1,17 +1,19 @@
-import os
-import hmac
-import hashlib
-import tempfile
-import shutil
 import base64
+import hashlib
+import hmac
+import os
+import shutil
+import tempfile
 from abc import ABC, abstractmethod
+
 from dotenv import load_dotenv
+
 from app.core.matrix import TraceabilityMatrix
 
 load_dotenv()
 
 
-# ─── WEBHOOK CONNECTOR BASE | Panohayan™ ────────────────────────────────────
+# ─── WEBHOOK CONNECTOR BASE | DOCYAN™ ────────────────────────────────────
 #
 # Clase base para conectores que reciben datos via webhook/POST.
 # Patrón: recibir payload → validar secret → extraer contenido → DII pipeline.

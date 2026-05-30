@@ -1,20 +1,21 @@
-import os
 import time
-from app.connectors.webhook_base import WebhookConnector
+
 from dotenv import load_dotenv
+
+from app.connectors.webhook_base import WebhookConnector
 
 load_dotenv()
 
 
-# ─── AGENTE ON-PREMISE CONNECTOR | Panohayan™ ───────────────────────────────
+# ─── AGENTE ON-PREMISE CONNECTOR | DOCYAN™ ───────────────────────────────
 #
 # Recibe datos enviados por un agente instalado en la red del cliente.
-# El agente on-premise actúa como bridge entre sistemas internos y Panohayan DLE™.
+# El agente on-premise actúa como bridge entre sistemas internos y DOCYAN LDE™.
 #
 # Flujo:
 #   1. Agente on-premise extrae datos de sistemas internos
 #   2. Agente envía via POST a /connectors/onpremise/receive
-#   3. Panohayan DLE™ procesa via DII pipeline
+#   3. DOCYAN LDE™ procesa via DII pipeline
 #   4. Agente consulta /connectors/onpremise/status para verificar
 #
 # Autenticación: shared secret (API Key en header X-Agent-Secret)

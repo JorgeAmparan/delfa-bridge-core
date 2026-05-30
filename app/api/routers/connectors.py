@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
 from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel, ConfigDict
+
 from app.api.auth import requiere_rol
 
 router = APIRouter(prefix="/connectors", tags=["connectors"])
@@ -50,7 +52,7 @@ async def listar_drive(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
 class MicroSipRequest(BaseModel):
     base_url: str = None
     username: str = None
@@ -163,7 +165,7 @@ async def procesar_microsip_db(
         return resumen
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-        
+
 class MicroSipFileRequest(BaseModel):
     directorio: str = None
 
@@ -245,7 +247,7 @@ async def procesar_sql(
     ctx: dict = Depends(requiere_rol("admin", "editor"))
 ):
     """
-    Procesa tablas de una BD SQL a través del pipeline Panohayan™.
+    Procesa tablas de una BD SQL a través del pipeline DOCYAN™.
     Si tabla está definida, procesa solo esa tabla.
     Si tablas es una lista, procesa esas tablas.
     Si ninguno está definido, procesa toda la BD.
@@ -293,8 +295,7 @@ class WebhookPayload(BaseModel):
     files: Optional[list] = None
     attachments: Optional[list] = None
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 def _webhook_endpoint(connector_class, payload: dict, secret: str,

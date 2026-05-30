@@ -1,12 +1,13 @@
 import os
-import requests
-from app.connectors.api_base import APIConnector
+
 from dotenv import load_dotenv
+
+from app.connectors.api_base import APIConnector
 
 load_dotenv()
 
 
-# ─── MICROSOFT GRAPH BASE CONNECTOR | Panohayan™ ────────────────────────────
+# ─── MICROSOFT GRAPH BASE CONNECTOR | DOCYAN™ ────────────────────────────
 #
 # Autenticación Azure AD compartida para conectores Microsoft Graph.
 # OneDrive, Outlook y Teams (Fase 3) heredan de aquí.

@@ -1,4 +1,3 @@
-import pytest
 
 
 class TestCORS:
@@ -28,5 +27,5 @@ class TestCORS:
         response = test_client.get("/")
         assert response.status_code == 200
         data = response.json()
-        assert data["product"] == "Panohayan DLE™"
+        assert data["product"] == "DOCYAN LDE™"
         assert data["status"] == "operational"

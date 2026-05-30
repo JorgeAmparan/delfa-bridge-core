@@ -1,0 +1,97 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "docyan-lde-core"
+version = "0.0.0"
+description = "DOCYAN LDE — Live Document Environment by XCID. Backend (FastAPI)."
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+license = { text = "Proprietary" }
+authors = [{ name = "XCID SA de CV" }]
+
+# Dependencias DIRECTAS (top-level que el paquete `app` importa).
+# El freeze transitivo completo vive en requirements.txt / requirements.docker.txt
+# mientras se completa la migración (ver CLAUDE.md §3). Los pines de
+# graphrag-sdk / litellm / apscheduler se resuelven en B1 con el resolver real
+# (graphrag-sdk 1.1.1 impone restricciones sobre litellm/openai/SDKs Google).
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic>=2",
+    "pydantic-settings",
+    "httpx",
+    "PyJWT",
+    "bcrypt",
+    "python-multipart",
+    "email-validator",
+    "python-dotenv",
+    "supabase",
+    "SQLAlchemy",
+    "redis",
+    "stripe",
+    # --- Ingesta multi-formato (DKG, B1) ---
+    "docling",
+    "llama-index",
+    "langextract",
+    "graphrag-sdk",   # pin en B1
+    "litellm",        # pin en B1 (prefijo gemini/ obligatorio)
+    "tiktoken",       # cotizador pre-ingesta (B3)
+    "tenacity",       # mitigación rate limiting Gemini (B1/B3)
+    # --- Scheduler (decisión #3) ---
+    "apscheduler",
+    # --- Legacy DII/intent (google-genai) — se retira en B1 junto al DII ---
+    "google-genai",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "httpx",
+    "psycopg[binary]",   # tests de migración sobre PostgreSQL+pgvector
+    "ruff",
+    "black",
+    "mypy",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = ["venv", "frontend", "migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+# E501 (longitud de línea) lo gestiona black; F401 en __init__ se permite.
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# main.py importa los módulos core DESPUÉS de load_dotenv() a propósito:
+# app.core.intent/ri instancian genai.Client(api_key=GOOGLE_API_KEY) en import-time,
+# por lo que el .env debe cargarse antes de importarlos.
+"app/main.py" = ["E402"]
+# __init__ re-exporta símbolos.
+"__init__.py" = ["F401"]
+
+[tool.black]
+target-version = ["py311"]
+line-length = 100
+extend-exclude = "venv|frontend"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+no_strict_optional = true
+exclude = "(venv|frontend|migrations)"

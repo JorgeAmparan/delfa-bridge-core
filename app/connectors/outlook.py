@@ -1,15 +1,17 @@
-import os
 import base64
-import tempfile
+import os
 import shutil
+import tempfile
+
+from dotenv import load_dotenv
+
 from app.connectors.msgraph_base import MSGraphConnector
 from app.core.matrix import TraceabilityMatrix
-from dotenv import load_dotenv
 
 load_dotenv()
 
 
-# ─── OUTLOOK CONNECTOR | Panohayan™ ─────────────────────────────────────────
+# ─── OUTLOOK CONNECTOR | DOCYAN™ ─────────────────────────────────────────
 #
 # Extrae correos y adjuntos de Outlook/Office 365 via Microsoft Graph.
 # Procesa cuerpo + adjuntos a través del pipeline DII.

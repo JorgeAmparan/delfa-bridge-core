@@ -1,11 +1,13 @@
 import os
-from app.connectors.api_base import APIConnector
+
 from dotenv import load_dotenv
+
+from app.connectors.api_base import APIConnector
 
 load_dotenv()
 
 
-# ─── SALESFORCE CONNECTOR | Panohayan™ ──────────────────────────────────────
+# ─── SALESFORCE CONNECTOR | DOCYAN™ ──────────────────────────────────────
 #
 # Extrae datos de Salesforce via REST API con simple-salesforce.
 # Soporta objetos estándar (Account, Contact, Lead, Opportunity)

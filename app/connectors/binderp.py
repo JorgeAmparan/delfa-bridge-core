@@ -1,7 +1,8 @@
 import os
+
 from app.connectors.api_base import APIConnector
 
-# ─── BIND ERP CONNECTOR | Panohayan™ ────────────────────────────────────────
+# ─── BIND ERP CONNECTOR | DOCYAN™ ────────────────────────────────────────
 #
 # Extrae facturas, clientes, productos e inventario de Bind ERP via API.
 # ERP mexicano en la nube — autenticación por API Key.

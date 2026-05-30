@@ -1,12 +1,14 @@
 import os
+
 import requests
-from app.connectors.api_base import APIConnector
 from dotenv import load_dotenv
+
+from app.connectors.api_base import APIConnector
 
 load_dotenv()
 
 
-# ─── ZOHO CRM CONNECTOR | Panohayan™ ────────────────────────────────────────
+# ─── ZOHO CRM CONNECTOR | DOCYAN™ ────────────────────────────────────────
 #
 # Extrae datos de Zoho CRM via REST API v2.
 # Usa OAuth2 Self-Client (refresh token).

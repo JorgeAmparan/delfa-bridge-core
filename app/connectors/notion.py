@@ -1,7 +1,8 @@
 import os
+
 from app.connectors.api_base import APIConnector
 
-# ─── NOTION CONNECTOR | Panohayan™ ──────────────────────────────────────────
+# ─── NOTION CONNECTOR | DOCYAN™ ──────────────────────────────────────────
 #
 # Extrae páginas y bases de datos de Notion via API.
 # Usa Integration Token (Internal Integration).

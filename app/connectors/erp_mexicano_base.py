@@ -1,14 +1,16 @@
 import os
-import tempfile
 import shutil
+import tempfile
 from abc import ABC, abstractmethod
+
 from dotenv import load_dotenv
+
 from app.core.matrix import TraceabilityMatrix
 
 load_dotenv()
 
 
-# ─── ERP MEXICANO BASE | Panohayan™ ─────────────────────────────────────────
+# ─── ERP MEXICANO BASE | DOCYAN™ ─────────────────────────────────────────
 #
 # Clase base para ERPs mexicanos con patrón dual:
 #   Opción A — Conexión directa a BD (ODBC/SQLAlchemy)

@@ -1,15 +1,16 @@
 import os
-import io
-import tempfile
 import shutil
+import tempfile
+
+from dotenv import load_dotenv
+
 from app.connectors.msgraph_base import MSGraphConnector
 from app.core.matrix import TraceabilityMatrix
-from dotenv import load_dotenv
 
 load_dotenv()
 
 
-# ─── ONEDRIVE CONNECTOR | Panohayan™ ────────────────────────────────────────
+# ─── ONEDRIVE CONNECTOR | DOCYAN™ ────────────────────────────────────────
 #
 # Descarga archivos de OneDrive via Microsoft Graph.
 # Soporta: PDF, DOCX, XLSX, PPTX, CSV, TXT

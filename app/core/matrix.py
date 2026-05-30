@@ -1,14 +1,14 @@
 import os
-from datetime import datetime
+
 from dotenv import load_dotenv
-from supabase import create_client, Client
+from supabase import Client, create_client
 
 load_dotenv()
 
 
 class TraceabilityMatrix:
     """
-    TM — Traceability Matrix | Panohayan™
+    TM — Traceability Matrix | DOCYAN™
     Logger centralizado de trazabilidad.
     Registra cada acción de cada componente sobre cada entidad.
     Permite reconstruir el estado completo en cualquier momento histórico.
@@ -160,7 +160,7 @@ class TraceabilityMatrix:
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("  TM — Traceability Matrix | Panohayan™")
+    print("  TM — Traceability Matrix | DOCYAN™")
     print("=" * 60)
 
     tm = TraceabilityMatrix()

@@ -1,6 +1,6 @@
 from app.connectors.webhook_base import WebhookConnector
 
-# ─── N8N CONNECTOR | Panohayan™ ─────────────────────────────────────────────
+# ─── N8N CONNECTOR | DOCYAN™ ─────────────────────────────────────────────
 #
 # Recibe datos desde workflows de n8n via webhook.
 # n8n envía JSON con estructura de items/nodes.

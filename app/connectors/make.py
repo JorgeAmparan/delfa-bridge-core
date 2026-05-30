@@ -1,6 +1,6 @@
 from app.connectors.webhook_base import WebhookConnector
 
-# ─── MAKE (INTEGROMAT) CONNECTOR | Panohayan™ ───────────────────────────────
+# ─── MAKE (INTEGROMAT) CONNECTOR | DOCYAN™ ───────────────────────────────
 #
 # Recibe datos desde escenarios de Make via webhook.
 # Make envía payload JSON con la estructura del escenario.

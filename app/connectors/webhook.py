@@ -1,6 +1,6 @@
 from app.connectors.webhook_base import WebhookConnector
 
-# ─── WEBHOOK GENÉRICO | Panohayan™ ──────────────────────────────────────────
+# ─── WEBHOOK GENÉRICO | DOCYAN™ ──────────────────────────────────────────
 #
 # Recibe cualquier payload JSON o archivo desde cualquier fuente.
 # Soporta HMAC-SHA256 para validación de firma.

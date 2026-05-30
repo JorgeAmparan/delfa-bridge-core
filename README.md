@@ -4,7 +4,7 @@
 
 Plataforma de localización documental con IA para industria regulada y agencias de traducción profesional. DOCYAN convierte documentación técnica en un entorno documental vivo, consultable por QR, multilingüe y auditable.
 
-> Antes conocido internamente como *Panohayan DLE*. Renombrado a **DOCYAN LDE** (28 mayo 2026).
+> Antes conocido internamente como *DOCYAN LDE*. Renombrado a **DOCYAN LDE** (28 mayo 2026).
 
 ---
 

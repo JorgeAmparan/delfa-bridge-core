@@ -1,19 +1,21 @@
 import os
+
 import requests
 from dotenv import load_dotenv
+
 from app.core.matrix import TraceabilityMatrix
 
 load_dotenv()
 
-# ─── MICROSIP CONNECTOR | Panohayan™ ─────────────────────────────────────────
+# ─── MICROSIP CONNECTOR | DOCYAN™ ─────────────────────────────────────────
 #
-# Conecta Panohayan DLE™ a MicroSip ERP via API REST local.
+# Conecta DOCYAN LDE™ a MicroSip ERP via API REST local.
 # Autenticación por sesión: POST /login → token → consultas
 # ─────────────────────────────────────────────────────────────────────────────
 
 class MicroSipConnector:
     """
-    Conector MicroSip ERP para Panohayan™.
+    Conector MicroSip ERP para DOCYAN™.
     Se conecta al servidor MicroSip del cliente via API REST.
     Extrae facturas, clientes, proveedores y movimientos.
     """
@@ -162,7 +164,7 @@ class MicroSipConnector:
             print(f"  [MicroSip] Error obteniendo movimientos: {e}")
             return []
 
-    # ── Procesamiento Panohayan ───────────────────────────────────────────────
+    # ── Procesamiento DOCYAN ───────────────────────────────────────────────
 
     def _datos_a_texto(self, datos: list, tipo: str) -> str:
         """Convierte datos JSON de MicroSip a texto estructurado para DII."""
@@ -181,10 +183,11 @@ class MicroSipConnector:
 
     def procesar_erp(self, org_id: str = None) -> dict:
         """
-        Extrae datos de MicroSip y los procesa a través del pipeline Panohayan™.
+        Extrae datos de MicroSip y los procesa a través del pipeline DOCYAN™.
         Convierte datos ERP en entidades estructuradas en EDB Lite.
         """
         import tempfile
+
         from app.core.dii import DigestInputIntelligence
         from app.core.grg import GovernanceGuardrails
 
@@ -193,7 +196,7 @@ class MicroSipConnector:
         if not self.login():
             return {"error": "No se pudo conectar a MicroSip"}
 
-        print(f"\n  [MicroSip] Iniciando extracción ERP completa")
+        print("\n  [MicroSip] Iniciando extracción ERP completa")
         tm = TraceabilityMatrix(org_id=_org_id)
 
         resumen = {
@@ -273,7 +276,7 @@ class MicroSipConnector:
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("  MicroSip Connector | Panohayan™")
+    print("  MicroSip Connector | DOCYAN™")
     print("=" * 60)
     print("\n  Configura en .env:")
     print("  MICROSIP_URL=http://18.222.120.251:5000")
@@ -470,19 +473,19 @@ class MicroSipDBConnector:
     def procesar_erp_db(self, org_id: str = None) -> dict:
         """
         Extrae datos directamente de la BD de MicroSip
-        y los procesa a través del pipeline Panohayan™.
+        y los procesa a través del pipeline DOCYAN™.
         """
-        import tempfile
         import shutil
+        import tempfile
+
         from app.core.dii import DigestInputIntelligence
-        from app.core.grg import GovernanceGuardrails
 
         _org_id = org_id or os.getenv("ORG_ID", "default")
 
         if not self.conectar():
             return {"error": "No se pudo conectar a la BD de MicroSip"}
 
-        print(f"\n  [MicroSip-DB] Iniciando extracción BD completa")
+        print("\n  [MicroSip-DB] Iniciando extracción BD completa")
         tm = TraceabilityMatrix(org_id=_org_id)
 
         resumen = {
@@ -585,7 +588,7 @@ class MicroSipFileConnector:
             for ns_key in ["cfdi", "cfdi3"]:
                 emisor = root.find(f"{ns_key}:Emisor", ns)
                 if emisor is not None:
-                    lineas.append(f"\n--- EMISOR ---")
+                    lineas.append("\n--- EMISOR ---")
                     lineas.append(f"RFC Emisor: {emisor.get('Rfc', '')}")
                     lineas.append(f"Nombre Emisor: {emisor.get('Nombre', '')}")
                     break
@@ -594,7 +597,7 @@ class MicroSipFileConnector:
             for ns_key in ["cfdi", "cfdi3"]:
                 receptor = root.find(f"{ns_key}:Receptor", ns)
                 if receptor is not None:
-                    lineas.append(f"\n--- RECEPTOR ---")
+                    lineas.append("\n--- RECEPTOR ---")
                     lineas.append(f"RFC Receptor: {receptor.get('Rfc', '')}")
                     lineas.append(f"Nombre Receptor: {receptor.get('Nombre', '')}")
                     break
@@ -603,7 +606,7 @@ class MicroSipFileConnector:
             for ns_key in ["cfdi", "cfdi3"]:
                 conceptos = root.findall(f".//{ns_key}:Concepto", ns)
                 if conceptos:
-                    lineas.append(f"\n--- CONCEPTOS ---")
+                    lineas.append("\n--- CONCEPTOS ---")
                     for concepto in conceptos:
                         lineas.append(
                             f"Descripción: {concepto.get('Descripcion', '')} | "
@@ -645,10 +648,10 @@ class MicroSipFileConnector:
         Procesa todos los archivos exportados de MicroSip en el directorio.
         Soporta XML (CFDI), CSV y PDF.
         """
-        import tempfile
         import shutil
+        import tempfile
+
         from app.core.dii import DigestInputIntelligence
-        from app.core.grg import GovernanceGuardrails
 
         _org_id = org_id or os.getenv("ORG_ID", "default")
 
@@ -727,4 +730,4 @@ class MicroSipFileConnector:
                 shutil.rmtree(tmp_dir, ignore_errors=True)
 
         print(f"\n  [MicroSip-File] Resumen: {resumen}")
-        return resumen    
+        return resumen

@@ -2,9 +2,9 @@ version: "3.9"
 
 services:
 
-  panohayan-api:
+  docyan-api:
     build: .
-    container_name: panohayan-dle-api
+    container_name: docyan-lde-api
     ports:
       - "8000:8000"
     env_file:
@@ -18,9 +18,9 @@ services:
       timeout: 10s
       retries: 3
 
-  panohayan-dii:
+  docyan-dii:
     build: .
-    container_name: panohayan-dle-dii
+    container_name: docyan-lde-dii
     ports:
       - "8001:8001"
     env_file:
@@ -30,9 +30,9 @@ services:
     command: ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8001"]
     restart: unless-stopped
 
-  panohayan-edb:
+  docyan-edb:
     build: .
-    container_name: panohayan-dle-edb
+    container_name: docyan-lde-edb
     ports:
       - "8002:8002"
     env_file:
@@ -42,9 +42,9 @@ services:
     command: ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8002"]
     restart: unless-stopped
 
-  panohayan-grg:
+  docyan-grg:
     build: .
-    container_name: panohayan-dle-grg
+    container_name: docyan-lde-grg
     ports:
       - "8003:8003"
     env_file:
@@ -52,9 +52,9 @@ services:
     command: ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8003"]
     restart: unless-stopped
 
-  panohayan-matrix:
+  docyan-matrix:
     build: .
-    container_name: panohayan-dle-matrix
+    container_name: docyan-lde-matrix
     ports:
       - "8004:8004"
     env_file:
@@ -64,7 +64,7 @@ services:
 
 networks:
   default:
-    name: panohayan-network
+    name: docyan-network
 
 volumes:
   data:

@@ -1,16 +1,16 @@
 import os
+
 import jwt
 import pytest
-from unittest.mock import patch
 
-os.environ.setdefault("JWT_SECRET", "test-secret-for-pytest")
+os.environ.setdefault("JWT_SECRET", "test-secret-for-pytest-min-32-bytes-long-0000")
 os.environ.setdefault("ALLOWED_ORIGINS", "http://localhost:3000")
 
 from app.api.auth import (
+    JWT_ALGORITHM,
+    JWT_SECRET,
     _create_access_token,
     _hash_token,
-    JWT_SECRET,
-    JWT_ALGORITHM,
 )
 
 
@@ -38,7 +38,7 @@ class TestJWT:
         user = {"id": "u1", "org_id": "o1", "role": "viewer", "email": "a@b.com"}
         token = _create_access_token(user)
         with pytest.raises(jwt.InvalidSignatureError):
-            jwt.decode(token, "wrong-secret", algorithms=[JWT_ALGORITHM])
+            jwt.decode(token, "wrong-secret-but-also-min-32-bytes-long-00", algorithms=[JWT_ALGORITHM])
 
     def test_expired_token_rejects(self):
         from datetime import datetime, timedelta, timezone

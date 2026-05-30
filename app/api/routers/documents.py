@@ -1,13 +1,15 @@
 import os
 import shutil
 import tempfile
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query
+
+from dotenv import load_dotenv
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from supabase import create_client
+
 from app.api.auth import requiere_rol
 from app.core.dii import DigestInputIntelligence
 from app.core.grg import GovernanceGuardrails
 from app.core.matrix import TraceabilityMatrix
-from supabase import create_client
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -21,7 +23,7 @@ async def procesar_documento(
     ctx: dict = Depends(requiere_rol("admin", "editor"))
 ):
     """
-    Sube y procesa un documento a través del pipeline Panohayan completo.
+    Sube y procesa un documento a través del pipeline DOCYAN completo.
     DII → EDB → GRG → TM
     """
     org_id = ctx["org_id"]

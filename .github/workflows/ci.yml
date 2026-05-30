@@ -2,24 +2,45 @@ name: CI
 
 on:
   push:
-    branches: [main, "feature/**"]
+    branches: [main, "feature/**", "sprint/**"]
   pull_request:
     branches: [main]
 
 jobs:
-  lint-and-test:
+  # ── Backend: lint + tests (incluye migraciones sobre PostgreSQL+pgvector) ──
+  backend:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: docyan_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
     env:
-      JWT_SECRET: ci-test-secret-not-real
+      JWT_SECRET: ci-test-secret-min-32-bytes-long-000000000
       ALLOWED_ORIGINS: http://localhost:3000
       SUPABASE_URL: https://fake.supabase.co
       SUPABASE_KEY: fake-key-for-ci
-      GOOGLE_API_KEY: fake-key-for-ci
+      SUPABASE_SERVICE_KEY: fake-service-key-for-ci
+      GEMINI_API_KEY: fake-key-for-ci
+      OPENAI_API_KEY: fake-key-for-ci
+      ANTHROPIC_API_KEY: fake-key-for-ci
       BGE_M3_URL: http://localhost:8080
       REDIS_URL: redis://localhost:6379/0
       FALKORDB_HOST: localhost
       ORG_ID: ci-test-org
+      API_KEY: ci-test-api-key
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docyan_test
 
     steps:
       - uses: actions/checkout@v4
@@ -30,20 +51,33 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
-      - name: Install dependencies
+      - name: Install test dependencies
         run: |
-          pip install --upgrade pip
-          pip install ruff pytest pytest-cov httpx
-          pip install -r requirements.docker.txt || true
+          python -m pip install --upgrade pip
+          pip install -r requirements.test.txt
 
       - name: Lint with ruff
         run: ruff check app/ tests/ --output-format=github
 
-      - name: Run tests
-        run: pytest tests/ -v --tb=short --cov=app --cov-report=term-missing
+      - name: Run backend tests (core + migraciones)
+        run: pytest tests/ -v --tb=short
 
-  type-check:
+  # ── Contrato OpenAPI → TS: regenerar tipos ANTES del build del frontend ──
+  gen-types:
     runs-on: ubuntu-latest
+    env:
+      JWT_SECRET: ci-gen-types-secret-min-32-bytes-000000000
+      ALLOWED_ORIGINS: http://localhost:3000
+      SUPABASE_URL: https://fake.supabase.co
+      SUPABASE_KEY: fake
+      SUPABASE_SERVICE_KEY: fake
+      GEMINI_API_KEY: fake-key-for-ci
+      OPENAI_API_KEY: fake-key-for-ci
+      BGE_M3_URL: http://localhost:8080
+      REDIS_URL: redis://localhost:6379/0
+      FALKORDB_HOST: localhost
+      ORG_ID: ci-gen-types
+
     steps:
       - uses: actions/checkout@v4
 
@@ -53,13 +87,63 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install mypy
-          pip install -r requirements.docker.txt || true
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
 
-      - name: Type check new modules
+      - name: Install backend deps (para exportar OpenAPI)
         run: |
-          mypy app/embeddings/ app/graph/ app/cache/ \
-            --ignore-missing-imports --no-strict-optional || true
+          python -m pip install --upgrade pip
+          pip install -r requirements.test.txt
+
+      - name: Install node deps (openapi-typescript)
+        run: npm install
+
+      - name: Generate TypeScript types from backend OpenAPI 3.1
+        run: bash frontend/scripts/generate-types.sh
+
+      - name: Upload regenerated api.ts
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-types
+          path: frontend/src/types/api.ts
+
+  # ── Frontend: lint + Vitest + build + Playwright E2E ──
+  frontend:
+    runs-on: ubuntu-latest
+    needs: gen-types
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Download regenerated api.ts (contrato del backend)
+        uses: actions/download-artifact@v4
+        with:
+          name: api-types
+          path: frontend/src/types/
+
+      - name: Lint
+        run: npm run lint --workspace frontend
+
+      - name: Unit tests (Vitest)
+        run: npm run test --workspace frontend
+
+      - name: Build (Next.js)
+        run: npm run build --workspace frontend
+
+      - name: Install Playwright browser
+        run: cd frontend && npx playwright install --with-deps chromium
+
+      - name: E2E tests (Playwright)
+        run: npm run test:e2e --workspace frontend

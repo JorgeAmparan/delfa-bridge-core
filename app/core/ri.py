@@ -1,19 +1,21 @@
 import os
-import json
+
 from dotenv import load_dotenv
 from google import genai
+
 from app.core.edb import EntityDataBrain
 from app.core.matrix import TraceabilityMatrix
 
 load_dotenv()
 
-client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+# Variable canónica GEMINI_API_KEY (adenda §5); GOOGLE_API_KEY compat deprecado (B1).
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
 RI_MODEL = "gemini-2.5-flash"
 
 
 class ResponseIntelligence:
     """
-    RI — Response Intelligence | Panohayan™
+    RI — Response Intelligence | DOCYAN™
     Pilar de salida del pipeline. Recibe una consulta del usuario,
     obtiene contexto relevante del EDB, evalúa suficiencia de datos,
     y genera una respuesta profesional sintetizada con citación de fuentes.
@@ -74,7 +76,7 @@ class ResponseIntelligence:
         contexto = self._construir_contexto(entidades)
         instruccion_suficiencia = self._instruccion_por_suficiencia(suficiencia)
 
-        prompt = f"""Eres el asistente inteligente de Panohayan DLE™, un middleware de IA empresarial con arquitectura Panohayan™.
+        prompt = f"""Eres el asistente inteligente de DOCYAN LDE™, un middleware de IA empresarial con arquitectura DOCYAN™.
 Tu función es responder consultas sobre documentos que han sido procesados, normalizados y almacenados.
 
 Pregunta del usuario: "{query}"

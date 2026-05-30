@@ -1,15 +1,15 @@
-import os
 import hashlib
+import os
 import secrets
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
-from fastapi import APIRouter, HTTPException, Security, Depends, status
-from fastapi.security import APIKeyHeader, HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel, EmailStr
-from supabase import create_client, Client
 from dotenv import load_dotenv
+from fastapi import APIRouter, Depends, HTTPException, Security, status
+from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel, EmailStr
+from supabase import Client, create_client
 
 load_dotenv()
 
@@ -26,7 +26,7 @@ API_KEY_HEADER = APIKeyHeader(name="X-API-Key", auto_error=False)
 BEARER_SCHEME = HTTPBearer(auto_error=False)
 
 DEV_API_KEY = os.getenv("API_KEY")
-DEV_ORG_ID = os.getenv("ORG_ID", "panohayan-demo")
+DEV_ORG_ID = os.getenv("ORG_ID", "docyan-demo")
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

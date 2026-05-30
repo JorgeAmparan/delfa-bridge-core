@@ -1,14 +1,16 @@
 import os
-import xmlrpc.client
-import tempfile
 import shutil
-from app.core.matrix import TraceabilityMatrix
+import tempfile
+import xmlrpc.client
+
 from dotenv import load_dotenv
+
+from app.core.matrix import TraceabilityMatrix
 
 load_dotenv()
 
 
-# ─── ODOO CONNECTOR | Panohayan™ ────────────────────────────────────────────
+# ─── ODOO CONNECTOR | DOCYAN™ ────────────────────────────────────────────
 #
 # Extrae datos de Odoo via XML-RPC (JSON-RPC compatible).
 # Soporta modelos configurables: res.partner, sale.order, account.move, etc.

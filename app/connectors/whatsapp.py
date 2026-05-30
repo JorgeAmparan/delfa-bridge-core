@@ -1,14 +1,14 @@
 import os
 import tempfile
-import shutil
-from app.connectors.webhook_base import WebhookConnector
-from app.core.matrix import TraceabilityMatrix
+
 from dotenv import load_dotenv
+
+from app.connectors.webhook_base import WebhookConnector
 
 load_dotenv()
 
 
-# ─── WHATSAPP BUSINESS CONNECTOR | Panohayan™ ───────────────────────────────
+# ─── WHATSAPP BUSINESS CONNECTOR | DOCYAN™ ───────────────────────────────
 #
 # Recibe mensajes de WhatsApp Business Cloud API via webhook.
 # Soporta: texto, documentos, imágenes.

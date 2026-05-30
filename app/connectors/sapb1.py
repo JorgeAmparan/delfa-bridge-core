@@ -1,11 +1,13 @@
 import os
-from app.connectors.api_base import APIConnector
+
 from dotenv import load_dotenv
+
+from app.connectors.api_base import APIConnector
 
 load_dotenv()
 
 
-# ─── SAP BUSINESS ONE CONNECTOR | Panohayan™ ────────────────────────────────
+# ─── SAP BUSINESS ONE CONNECTOR | DOCYAN™ ────────────────────────────────
 #
 # Extrae datos de SAP Business One via Service Layer REST API.
 # Autenticación session-based: POST /Login → cookie de sesión.

@@ -1,12 +1,13 @@
 import os
+
+from dotenv import load_dotenv
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from dotenv import load_dotenv
 
 load_dotenv()
 
 
-# ─── GOOGLE BASE CONNECTOR | Panohayan™ ─────────────────────────────────────
+# ─── GOOGLE BASE CONNECTOR | DOCYAN™ ─────────────────────────────────────
 #
 # Autenticación compartida para conectores Google (Gmail, Meet).
 # Reutiliza el patrón de Service Account de google_drive.py.

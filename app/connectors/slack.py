@@ -1,14 +1,16 @@
 import os
-import tempfile
 import shutil
+import tempfile
+
+from dotenv import load_dotenv
+
 from app.connectors.api_base import APIConnector
 from app.core.matrix import TraceabilityMatrix
-from dotenv import load_dotenv
 
 load_dotenv()
 
 
-# ─── SLACK CONNECTOR | Panohayan™ ───────────────────────────────────────────
+# ─── SLACK CONNECTOR | DOCYAN™ ───────────────────────────────────────────
 #
 # Extrae mensajes de canales de Slack via Bot Token.
 # Procesa conversaciones y archivos compartidos a través del pipeline DII.

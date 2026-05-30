@@ -1,10 +1,9 @@
-import os
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 from app.core.dii import (
-    clasificar_documento,
     EXTENSIONES_SOPORTADAS,
     DigestInputIntelligence,
+    clasificar_documento,
 )
 
 

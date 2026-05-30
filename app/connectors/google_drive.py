@@ -1,17 +1,17 @@
-import os
 import io
+import os
 import tempfile
+
 from dotenv import load_dotenv
-from google.oauth2.credentials import Credentials
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 
 load_dotenv()
 
-# ─── GOOGLE DRIVE CONNECTOR | Panohayan™ ─────────────────────────────────────
+# ─── GOOGLE DRIVE CONNECTOR | DOCYAN™ ─────────────────────────────────────
 #
-# Conecta Panohayan DLE™ a Google Drive.
+# Conecta DOCYAN LDE™ a Google Drive.
 # Descarga documentos y los procesa a través del pipeline DII.
 # Soporta: PDF, DOCX, XLSX, Google Docs (exportados)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -36,7 +36,7 @@ EXPORT_MIME_TYPES = {
 
 class GoogleDriveConnector:
     """
-    Conector Google Drive para Panohayan™.
+    Conector Google Drive para DOCYAN™.
     Descarga y procesa documentos desde carpetas de Drive.
     """
 
@@ -61,9 +61,10 @@ class GoogleDriveConnector:
         # Opción 2: Credenciales OAuth desde .env
         credentials_file = os.getenv("GOOGLE_CREDENTIALS_FILE")
         if credentials_file and os.path.exists(credentials_file):
-            from google_auth_oauthlib.flow import InstalledAppFlow
-            from google.auth.transport.requests import Request
             import pickle
+
+            from google.auth.transport.requests import Request
+            from google_auth_oauthlib.flow import InstalledAppFlow
 
             token_file = "token.pickle"
             credentials = None
@@ -160,7 +161,7 @@ class GoogleDriveConnector:
                          org_id: str = None) -> dict:
         """
         Procesa todos los documentos de una carpeta de Drive
-        a través del pipeline Panohayan™ completo.
+        a través del pipeline DOCYAN™ completo.
         """
         from app.core.dii import DigestInputIntelligence
         from app.core.grg import GovernanceGuardrails
@@ -245,7 +246,7 @@ class GoogleDriveConnector:
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("  Google Drive Connector | Panohayan™")
+    print("  Google Drive Connector | DOCYAN™")
     print("=" * 60)
     print("\n  Para usar este conector necesitas configurar:")
     print("  GOOGLE_SERVICE_ACCOUNT_FILE=ruta/al/service_account.json")
@@ -254,4 +255,3 @@ if __name__ == "__main__":
     print("\n  Luego ejecuta:")
     print("  connector = GoogleDriveConnector()")
     print("  connector.procesar_carpeta('tu_folder_id')")
-    

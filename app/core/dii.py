@@ -1,16 +1,18 @@
-import os
-import json
 import hashlib
+import json
+import os
 from datetime import datetime, timezone
+
 import langextract as lx
-from dotenv import load_dotenv
-from langextract import data as lx_data
-from supabase import create_client, Client
-from google import genai
 from docling.document_converter import DocumentConverter
+from dotenv import load_dotenv
+from google import genai
+from langextract import data as lx_data
+from supabase import Client, create_client
+
 from app.core.intent import DocumentIntentAnalyzer
-from app.core.mr import model_router
 from app.core.matrix import TraceabilityMatrix
+from app.core.mr import model_router
 
 load_dotenv()
 
@@ -49,8 +51,10 @@ class DigestInputIntelligence:
         self.data_path = os.getenv("DATA_DIR", "./data")
         self.org_id = org_id or os.getenv("ORG_ID", "default")
 
-        if not os.getenv("LANGEXTRACT_API_KEY") and os.getenv("GOOGLE_API_KEY"):
-            os.environ["LANGEXTRACT_API_KEY"] = os.getenv("GOOGLE_API_KEY")
+        # LangExtract usa Gemini; puentea desde GEMINI_API_KEY (GOOGLE_API_KEY compat deprecado, B1).
+        _gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        if not os.getenv("LANGEXTRACT_API_KEY") and _gemini_key:
+            os.environ["LANGEXTRACT_API_KEY"] = _gemini_key
 
         self.supabase: Client = create_client(
             os.getenv("SUPABASE_URL"),
@@ -235,7 +239,7 @@ class DigestInputIntelligence:
 
         try:
             print("  [MR] Enriqueciendo entidades con LLM...")
-            client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+            client = genai.Client(api_key=os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
             response = client.models.generate_content(
                 model="gemini-2.5-flash", contents=prompt
             )
@@ -282,7 +286,7 @@ class DigestInputIntelligence:
 
     def run_dii_pipeline(self) -> list:
         print("=" * 60)
-        print("  DII — Digest Input Intelligence | Panohayan™")
+        print("  DII — Digest Input Intelligence | DOCYAN™")
         print("=" * 60)
 
         archivos = [

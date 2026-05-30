@@ -1,15 +1,17 @@
-import os
 import io
-import tempfile
+import os
 import shutil
+import tempfile
+
+from dotenv import load_dotenv
+
 from app.connectors.google_base import GoogleBaseConnector
 from app.core.matrix import TraceabilityMatrix
-from dotenv import load_dotenv
 
 load_dotenv()
 
 
-# ─── GOOGLE MEET CONNECTOR | Panohayan™ ─────────────────────────────────────
+# ─── GOOGLE MEET CONNECTOR | DOCYAN™ ─────────────────────────────────────
 #
 # Extrae grabaciones y transcripciones de Google Meet.
 # Usa Google Drive API para acceder a grabaciones (Meet guarda en Drive).

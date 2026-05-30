@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+
 from app.api.auth import requiere_rol
 from app.core.matrix import TraceabilityMatrix
 

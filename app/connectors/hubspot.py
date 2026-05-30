@@ -1,7 +1,8 @@
 import os
+
 from app.connectors.api_base import APIConnector
 
-# ─── HUBSPOT CONNECTOR | Panohayan™ ─────────────────────────────────────────
+# ─── HUBSPOT CONNECTOR | DOCYAN™ ─────────────────────────────────────────
 #
 # Extrae contactos, deals y companies de HubSpot via API v3.
 # Usa Private App Token (API Key).

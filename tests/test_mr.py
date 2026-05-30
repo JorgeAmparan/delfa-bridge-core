@@ -1,4 +1,4 @@
-from app.core.mr import ModelRouter, MODELOS
+from app.core.mr import MODELOS, ModelRouter
 
 
 class TestModelRouter:

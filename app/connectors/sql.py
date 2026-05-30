@@ -1,12 +1,14 @@
 import os
+
 from dotenv import load_dotenv
+
 from app.core.matrix import TraceabilityMatrix
 
 load_dotenv()
 
-# ─── SQL CONNECTOR | Panohayan™ ───────────────────────────────────────────────
+# ─── SQL CONNECTOR | DOCYAN™ ───────────────────────────────────────────────
 #
-# Conector SQL genérico para Panohayan™.
+# Conector SQL genérico para DOCYAN™.
 # Conecta a cualquier base de datos SQL del cliente.
 # Soporta: MySQL, PostgreSQL, SQL Server, SQLite
 # ─────────────────────────────────────────────────────────────────────────────
@@ -22,7 +24,7 @@ DRIVERS = {
 
 class SQLConnector:
     """
-    Conector SQL genérico para Panohayan™.
+    Conector SQL genérico para DOCYAN™.
     Ejecuta queries configurables y procesa resultados via DII.
     """
 
@@ -32,7 +34,9 @@ class SQLConnector:
                  connection_string: str = None):
         self.db_type = db_type or os.getenv("SQL_DB_TYPE", "mysql")
         self.host = host or os.getenv("SQL_HOST", "localhost")
-        self.port = port or int(os.getenv("SQL_PORT", "3306"))
+        # Robusto ante SQL_PORT="" (env presente pero vacío → int("") lanzaba ValueError).
+        _port_env = os.getenv("SQL_PORT", "").strip()
+        self.port = port or (int(_port_env) if _port_env else 3306)
         self.database = database or os.getenv("SQL_DATABASE", "")
         self.username = username or os.getenv("SQL_USER", "")
         self.password = password or os.getenv("SQL_PASSWORD", "")
@@ -113,10 +117,11 @@ class SQLConnector:
     def procesar_tabla(self, tabla: str, limite: int = 100,
                        columnas: list = None, org_id: str = None) -> dict:
         """
-        Procesa una tabla específica a través del pipeline Panohayan™.
+        Procesa una tabla específica a través del pipeline DOCYAN™.
         """
-        import tempfile
         import shutil
+        import tempfile
+
         from app.core.dii import DigestInputIntelligence
 
         _org_id = org_id or os.getenv("ORG_ID", "default")
@@ -211,7 +216,7 @@ class SQLConnector:
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("  SQL Connector | Panohayan™")
+    print("  SQL Connector | DOCYAN™")
     print("=" * 60)
     print("\n  Configura en .env:")
     print("  SQL_DB_TYPE=mysql | postgresql | mssql | sqlite")
@@ -222,4 +227,3 @@ if __name__ == "__main__":
     print("  SQL_PASSWORD=password")
     print("  O bien:")
     print("  SQL_CONNECTION_STRING=dialect+driver://user:pass@host/db")
-    

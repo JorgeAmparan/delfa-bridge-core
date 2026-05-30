@@ -1,28 +1,28 @@
-import os
 import asyncio
+import os
+
 from dotenv import load_dotenv
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp.types import Tool, TextContent
+from mcp.types import TextContent, Tool
+
 from app.core.edb import EntityDataBrain
-from app.core.dii import DigestInputIntelligence
-from app.core.grg import GovernanceGuardrails
 from app.core.matrix import TraceabilityMatrix
 
 load_dotenv()
 
-# ─── PANOHAYAN™ MCP SERVER ────────────────────────────────────────────────────
+# ─── DOCYAN™ MCP SERVER ────────────────────────────────────────────────────
 #
-# Expone Panohayan DLE™ como MCP server.
-# Permite conectar Panohayan™ directamente a Claude y ecosistema MCP.
+# Expone DOCYAN LDE™ como MCP server.
+# Permite conectar DOCYAN™ directamente a Claude y ecosistema MCP.
 # ─────────────────────────────────────────────────────────────────────────────
 
-server = Server("panohayan-dle")
+server = Server("docyan-lde")
 
 
 @server.list_tools()
 async def list_tools() -> list[Tool]:
-    """Lista las herramientas disponibles en Panohayan™."""
+    """Lista las herramientas disponibles en DOCYAN™."""
     return [
         Tool(
             name="search_knowledge",
@@ -61,7 +61,7 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "document_id": {
                         "type": "string",
-                        "description": "ID del documento en Panohayan DLE™"
+                        "description": "ID del documento en DOCYAN LDE™"
                     }
                 },
                 "required": ["document_id"]
@@ -99,7 +99,7 @@ async def list_tools() -> list[Tool]:
 
 @server.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
-    """Ejecuta una herramienta de Panohayan™."""
+    """Ejecuta una herramienta de DOCYAN™."""
 
     org_id = os.getenv("ORG_ID", "default")
 
@@ -173,7 +173,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 text="No hay documentos procesados."
             )]
 
-        texto = f"Documentos en Panohayan DLE™ ({len(resultado.data)}):\n\n"
+        texto = f"Documentos en DOCYAN LDE™ ({len(resultado.data)}):\n\n"
         for doc in resultado.data:
             texto += (
                 f"• {doc['name']} [{doc['source_type']}] "
@@ -188,7 +188,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         summary = edb.get_summary()
 
         texto = (
-            f"Knowledge Base Summary — Panohayan™\n\n"
+            f"Knowledge Base Summary — DOCYAN™\n\n"
             f"Organización : {summary['org_id']}\n"
             f"Documentos   : {summary['total_documentos']}\n"
             f"Entidades    : {summary['total_entidades']}\n"
@@ -210,4 +210,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    

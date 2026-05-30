@@ -1,9 +1,11 @@
 import os
+
 import stripe
-from fastapi import APIRouter, HTTPException, Request, Depends
-from pydantic import BaseModel
-from app.api.auth import requiere_rol
 from dotenv import load_dotenv
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel
+
+from app.api.auth import requiere_rol
 
 load_dotenv()
 
@@ -42,20 +44,20 @@ class CheckoutRequest(BaseModel):
     plan: str
     email: str
     org_name: str
-    success_url: str = "https://panohayan.dle/success"
-    cancel_url: str = "https://panohayan.dle/cancel"
+    success_url: str = "https://docyan.dle/success"
+    cancel_url: str = "https://docyan.dle/cancel"
 
 
 class PortalRequest(BaseModel):
     customer_id: str
-    return_url: str = "https://panohayan.dle/dashboard"
+    return_url: str = "https://docyan.dle/dashboard"
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.get("/plans")
 async def listar_planes():
-    """Lista los planes disponibles de Panohayan DLE™."""
+    """Lista los planes disponibles de DOCYAN LDE™."""
     return {
         "planes": [
             {
@@ -138,7 +140,7 @@ async def webhook_stripe(request: Request):
     """
     Webhook de Stripe — procesa eventos de suscripción.
     Configura esta URL en Stripe Dashboard → Webhooks.
-    URL: https://panohayan-api-production.up.railway.app/billing/webhook
+    URL: https://docyan-lde-api.fly.dev/billing/webhook
     """
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
@@ -179,8 +181,8 @@ async def _activar_suscripcion(session: dict):
     Activa la suscripción después de pago exitoso.
     Genera API Key y notifica al cliente.
     """
-    import secrets
     import hashlib
+    import secrets
 
     email = session.get("customer_email")
     org_name = session.get("metadata", {}).get("org_name", "")
@@ -190,7 +192,7 @@ async def _activar_suscripcion(session: dict):
     # Generar API Key única para esta organización
     raw_key = secrets.token_urlsafe(32)
     org_id = hashlib.sha256(email.encode()).hexdigest()[:16]
-    api_key = f"pdle_{raw_key}"
+    api_key = f"dlde_{raw_key}"
 
     # Guardar en Supabase
     from supabase import create_client
@@ -239,4 +241,3 @@ async def _pago_fallido(invoice: dict):
     """Log de pago fallido."""
     customer_id = invoice.get("customer")
     print(f"  [Billing] ⚠️ Pago fallido: {customer_id}")
-    

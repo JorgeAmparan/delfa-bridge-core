@@ -1,14 +1,16 @@
 import os
-import tempfile
 import shutil
+import tempfile
 from ftplib import FTP
-from app.core.matrix import TraceabilityMatrix
+
 from dotenv import load_dotenv
+
+from app.core.matrix import TraceabilityMatrix
 
 load_dotenv()
 
 
-# ─── FTP/SFTP CONNECTOR | Panohayan™ ────────────────────────────────────────
+# ─── FTP/SFTP CONNECTOR | DOCYAN™ ────────────────────────────────────────
 #
 # Descarga archivos de servidores FTP/SFTP y los procesa via DII.
 # Soporta FTP (ftplib) y SFTP (paramiko).
