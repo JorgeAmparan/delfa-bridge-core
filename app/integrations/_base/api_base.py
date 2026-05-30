@@ -15,7 +15,7 @@ load_dotenv()
 #
 # Clase base para conectores que extraen datos via REST API.
 # Patrón: autenticarse → listar/extraer → texto estructurado → DII pipeline.
-# Usado por: Notion, HubSpot, Pipedrive, Bind ERP.
+# Usado por: app.ingest_sources.notion (y clientes HTTP salientes del MO a futuro).
 # ─────────────────────────────────────────────────────────────────────────────
 
 
