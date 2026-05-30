@@ -47,7 +47,7 @@ redis>=5.0.0
 
 # Fuentes documentales conservadas (app/ingest_sources/*)
 google-api-python-client==2.149.0   # Google Drive
-google-auth==2.35.0                  # Google Drive / OneDrive auth
+google-auth==2.49.1                  # Google Drive / OneDrive auth (>=2.48.1 lo exige google-genai)
 msal==1.31.1                         # OneDrive (MS Graph)
 paramiko==3.5.1                      # FTP/SFTP
 
@@ -76,7 +76,6 @@ email-validator==2.2.0
 #   tiktoken                                       (B3 cotizador)
 #   weasyprint, python-pptx, lxml, python-docx,
 #   openpyxl, pandas, beautifulsoup4              (B4/B5 reconstrucción/parse)
-#   google-genai                                  (B1 genai.Client)
 # Eliminados definitivamente (conectores retirados en B0.5):
 #   slack-sdk, simple-salesforce
 # ============================================================
