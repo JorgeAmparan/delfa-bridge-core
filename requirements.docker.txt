@@ -1,18 +1,19 @@
 # ============================================================
-# DOCYAN LDE — by XCID — Docker dependencies
-# Actualizado 28 mayo 2026 — post-PoC GraphRAG-SDK
-# (no macOS-only packages: sin pyobjc, sin ocrmac)
+# DOCYAN LDE — by XCID — Docker runtime dependencies
+# Actualizado 30 mayo 2026 — B0.5 (limpieza + optimización imagen)
 # ============================================================
-# PyTorch CPU-only se instala por separado ANTES de este archivo:
-#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-# Necesario para BGE-M3 self-hosted (decisión #1). NO eliminar
-# salvo que BGE-M3 corra como servicio separado (evaluar en B13).
+# Este archivo es la SUPERFICIE MÍNIMA que la API bootable necesita
+# (`app.api.main:app`) + las fuentes documentales conservadas. El stack
+# pesado de ingesta (Docling/LlamaIndex/Transformers/torch) y de
+# reconstrucción de formato (WeasyPrint/pandas/pptx/docx) NO se incluye
+# en la imagen porque NO es alcanzable desde el backend en B0.5 y arrastra
+# PyTorch (~2-3 GB) que rebasa el límite de unpack de Fly (8 GB).
+#
+# Esos paquetes viven en requirements.txt (dev/B1) y se re-incorporan a la
+# imagen en B1 cuando GraphRAG-SDK queda cableado al runtime — junto con la
+# decisión de ejecutar BGE-M3 y el OCR de Docling como SERVICIOS SEPARADOS
+# (decisión #1; bge_client.py ya es cliente HTTP puro, no embebe torch).
 # ------------------------------------------------------------
-# NOTA DE VERSIONES POST-PoC (resolver en B1 con el resolver real):
-#   graphrag-sdk / litellm / apscheduler sin pin fijo — los pinea
-#   Opus en B1 con lo que resuelva el entorno real. Sincronizado
-#   con requirements.txt.
-# ============================================================
 
 # Core framework
 fastapi==0.135.3
@@ -26,51 +27,32 @@ pydantic-settings==2.13.1
 bcrypt==5.0.0
 PyJWT==2.12.1
 
-# Supabase
+# Supabase (operacional + auth + FAT spillover)
 supabase==2.28.3
 
-# --- NUEVO post-PoC: arquitectura de ingesta ---
-graphrag-sdk          # FalkorDB GraphRAG-SDK 1.1.1 — reemplaza DII. Pin en B1.
-litellm               # LLM-agnóstico (prefijo gemini/ obligatorio). Pin en B1.
-apscheduler           # Scheduler backend Redis (decisión #3). Pin en B1.
-
-# LLM providers
+# LLM providers (capa de traducción / DII actual vía Model Router)
 anthropic==0.87.0
-google-genai==1.70.0
-google-generativeai==0.8.6   # Gemini 2.5 Flash extracción + resolution (ingesta)
-openai==2.30.0               # gpt-4o-mini = QA del pipeline de ingesta (REPORTE_CONTRATO4). NO eliminar.
+google-generativeai==0.8.6   # Gemini — usado por app/core/dii.py (alcanzable vía /documents)
+openai==2.30.0               # gpt-4o-mini QA
 
-# Document processing + stack de ingesta multi-formato (adenda 5)
-docling==2.84.0
-langextract==1.2.0
-llama-index==0.14.19
-llama-index-core==0.14.19
-
-# Cotizador pre-ingesta (B3)
-tiktoken==0.12.0             # Faltaba en docker; requerido por cotizador. Agregado.
-
-# Reconstrucción de formato (B4)
-weasyprint                   # Reconstrucción PDF (doc 12). Pin en B4.
-python-pptx==1.0.2
-lxml==6.0.2
-
-# Embeddings (BGE-M3 client) — requiere torch (instalado aparte)
+# Embeddings (BGE-M3) — CLIENTE HTTP puro (no torch). Servicio aparte.
 httpx==0.28.1
-transformers==5.4.0          # BGE-M3 self-hosted. NO eliminar.
-
-# Database connectors
-SQLAlchemy==2.0.48
-PyMySQL==1.1.2
 
 # Graph & cache
 falkordb>=1.0.0
 redis>=5.0.0
 
-# Connectors
-msal==1.31.1
-slack-sdk==3.33.5
-simple-salesforce==1.12.6
-paramiko==3.5.1
+# Fuentes documentales conservadas (app/ingest_sources/*)
+google-api-python-client==2.149.0   # Google Drive
+google-auth==2.35.0                  # Google Drive / OneDrive auth
+msal==1.31.1                         # OneDrive (MS Graph)
+paramiko==3.5.1                      # FTP/SFTP
+
+# Helpers DB genéricos (app/integrations/sql.py — Postgres/Supabase)
+SQLAlchemy==2.0.48
+PyMySQL==1.1.2
+
+# Billing
 stripe==15.0.1
 
 # MCP
@@ -79,15 +61,19 @@ sse-starlette==3.3.4
 
 # Utils
 requests==2.33.1
-beautifulsoup4==4.14.3
-pandas==3.0.2
-openpyxl==3.1.5
-python-docx==1.2.0
 Jinja2==3.1.6
-tenacity==9.1.4              # retry rate limiting Gemini (1,506 retries multi-doc PoC)
+tenacity==9.1.4
 email-validator==2.2.0
 
 # ============================================================
-# Binarios externos (B5) — instalar vía apt/git en Dockerfile,
-# NO vía pip: vecalign, hunalign (alineadores Pista B).
+# DIFERIDO A B1+ (NO en imagen B0.5) — re-incorporar al cablear ingesta:
+#   graphrag-sdk, litellm, apscheduler            (B1/B3)
+#   docling, langextract, llama-index(-core)      (B1, arrastran torch)
+#   transformers, sentence-transformers           (BGE como servicio aparte)
+#   tiktoken                                       (B3 cotizador)
+#   weasyprint, python-pptx, lxml, python-docx,
+#   openpyxl, pandas, beautifulsoup4              (B4/B5 reconstrucción/parse)
+#   google-genai                                  (B1 genai.Client)
+# Eliminados definitivamente (conectores retirados en B0.5):
+#   slack-sdk, simple-salesforce
 # ============================================================

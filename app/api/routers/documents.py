@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from supabase import create_client
 
 from app.api.auth import requiere_rol
-from app.core.dii import DigestInputIntelligence
 from app.core.grg import GovernanceGuardrails
 from app.core.matrix import TraceabilityMatrix
 
@@ -40,6 +39,12 @@ async def procesar_documento(
         os.rename(tmp_path, final_path)
 
         # Pipeline DII
+        # Import perezoso: DII arrastra el stack pesado de ingesta
+        # (Docling/LlamaIndex/torch) que NO va en la imagen B0.5 (diferido a
+        # B1, donde DII se reemplaza por GraphRAG-SDK). A nivel de módulo
+        # rompía el arranque de la API en el contenedor.
+        from app.core.dii import DigestInputIntelligence
+
         dii = DigestInputIntelligence(org_id=org_id)
         dii.data_path = os.path.dirname(final_path)
         entidades = dii.run_dii_pipeline()

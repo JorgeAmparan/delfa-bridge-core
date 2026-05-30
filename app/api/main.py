@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.auth import router as auth_router
-from app.api.routers import billing, chat, connectors, documents, governance, search, trail
+from app.api.routers import billing, chat, documents, governance, ingest_sources, search, trail
 
 load_dotenv()
 
@@ -41,7 +41,7 @@ app.include_router(documents.router)
 app.include_router(search.router)
 app.include_router(governance.router)
 app.include_router(trail.router)
-app.include_router(connectors.router)
+app.include_router(ingest_sources.router)
 app.include_router(billing.router)
 app.include_router(chat.router)
 

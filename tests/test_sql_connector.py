@@ -1,4 +1,4 @@
-from app.connectors.sql import DRIVERS, SQLConnector
+from app.integrations.sql import DRIVERS, SQLConnector
 
 
 class TestSQLConnector:

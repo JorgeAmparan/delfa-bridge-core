@@ -1,9 +1,18 @@
+# ============================================================================
+# CÓDIGO DE REFERENCIA — NO ACTIVO  (DOCYAN LDE™ — B0.5)
+# ----------------------------------------------------------------------------
+# Este archivo es el conector WhatsApp heredado de delfa-bridge-core. NO está
+# registrado en ningún router ni se importa en runtime. Se conserva ÚNICAMENTE
+# como referencia para B9, donde se construye la integración nativa con
+# 360dialog (decisión #8 del Paso C, BSP único sin Twilio). No construir
+# sobre este archivo: su API y su modelo de webhooks no son los de 360dialog.
+# ============================================================================
 import os
 import tempfile
 
 from dotenv import load_dotenv
 
-from app.connectors.webhook_base import WebhookConnector
+from app.integrations._base.webhook_base import WebhookConnector
 
 load_dotenv()
 
