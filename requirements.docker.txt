@@ -32,7 +32,10 @@ supabase==2.28.3
 
 # LLM providers (capa de traducción / DII actual vía Model Router)
 anthropic==0.87.0
-google-generativeai==0.8.6   # Gemini — usado por app/core/dii.py (alcanzable vía /documents)
+google-genai==1.70.0         # SDK nuevo: `from google import genai`. Importado a NIVEL
+                             # DE MÓDULO por app/core/ri.py e intent.py → alcanzable en
+                             # el arranque (chat.py→ri). Cliente puro, NO arrastra torch.
+google-generativeai==0.8.6   # SDK viejo (google.generativeai) — usado por DII (lazy, /documents).
 openai==2.30.0               # gpt-4o-mini QA
 
 # Embeddings (BGE-M3) — CLIENTE HTTP puro (no torch). Servicio aparte.
