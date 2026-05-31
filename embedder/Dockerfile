@@ -23,5 +23,10 @@ COPY main.py .
 ENV PORT=8000
 EXPOSE 8000
 
+# Bind 0.0.0.0: el backend alcanza este servicio por `docyan-lde-embedder.flycast`
+# (fly-proxy mediado), que puentea IPv4↔IPv6 y dispara auto-start. Con `::`
+# (IPv6-only) el health check TCP de Fly (IPv4) fallaba y reiniciaba la máquina a
+# media carga del modelo. flycast es el patrón recomendado para servicio↔servicio
+# privado en Fly. B1 §13.
 # Un solo worker: el modelo ocupa RAM; replicar workers multiplicaría memoria.
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"]

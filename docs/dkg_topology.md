@@ -34,7 +34,7 @@
 |---|---|---|---|---|---|
 | Backend | `docyan-lde-api` | 8000 | sí (HTTPS) | stateless | shared-cpu-2x / 1 GB |
 | Grafo | `docyan-lde-graph` | 6379 | **no** (.internal) | volumen `/data` (RPO 15m) | shared-cpu-2x / 2 GB |
-| Embedder | `docyan-lde-embedder` | 8000 | **no** (.internal) | modelo en imagen | shared-cpu-4x / 4 GB |
+| Embedder | `docyan-lde-embedder` | 8000 | **no** (.flycast) | modelo en imagen | shared-cpu-4x / 8 GB |
 | Ingesta (B2) | `docyan-lde-ingest` | — | no | — | — |
 
 ## Por qué separados (B1 §Contexto)
@@ -51,10 +51,27 @@
 | Origen → Destino | DNS interno | Variable |
 |---|---|---|
 | backend → grafo | `docyan-lde-graph.internal:6379` | `FALKOR_HOST`, `FALKOR_PORT` |
-| backend → embedder | `docyan-lde-embedder.internal:8000` | `EMBEDDER_URL` |
+| backend → embedder | `docyan-lde-embedder.flycast:8000` | `EMBEDDER_URL` |
 
 `bge_client` (cliente HTTP puro, sin torch) y `DKGClient` (cliente `falkordb`)
 viven en el backend y hablan con los servicios por la red privada de Fly.
+
+**Lecciones de despliegue (B1, verdad operacional):**
+
+- **Embedder vía `.flycast`, no `.internal`.** El servicio escucha en `0.0.0.0`
+  (IPv4); las conexiones directas `.internal` resuelven a la IPv6 6PN y eran
+  rechazadas. Bindear `::` (IPv6-only en este kernel) rompía el health-check TCP
+  de Fly (IPv4) → la máquina se reiniciaba a media carga del modelo. `.flycast`
+  (fly-proxy mediado) puentea IPv4↔IPv6 y es el patrón correcto servicio↔servicio.
+- **8 GB de RAM, no 4.** BGE-M3 fp32 (~2.3 GB) + torch satura 4 GB. Optimización
+  futura (B2): fp16/int8.
+- **Modo offline** (`HF_HUB_OFFLINE=1`, `TRANSFORMERS_OFFLINE=1`): el modelo va
+  baked en la imagen; sin offline, `huggingface_hub` contacta huggingface.co y se
+  cuelga.
+- **Cold-start del modelo ~107 s de carga + ~39 s del primer encode** (CPU);
+  una vez caliente, ~0.6 s/consulta. Por eso `min_machines_running=1` (siempre
+  encendido) y `BGE_M3_TIMEOUT=120` en el backend. Optimización futura: precargar
+  el modelo en el `startup` event en un threadpool.
 
 ## Conflicto de dependencias documentado (B1 §9.2)
 

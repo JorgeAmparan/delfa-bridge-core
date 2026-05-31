@@ -11,6 +11,11 @@ primary_region = "dfw"
   PORT = "8000"
   BGE_MODEL_NAME = "BAAI/bge-m3"
   HF_HOME = "/app/.hf_cache"
+  # El modelo va baked en la imagen → modo offline: sin esto, huggingface_hub
+  # intenta contactar huggingface.co para verificar revisión en cada carga y se
+  # cuelga si el egress es lento (causaba timeouts >300s en la carga). B1 §13.
+  HF_HUB_OFFLINE = "1"
+  TRANSFORMERS_OFFLINE = "1"
 
 # Servicio interno: escucha en 8000 sobre la red privada de Fly (.internal /
 # .flycast). NO se expone http_service público — el backend lo alcanza por DNS
@@ -18,9 +23,12 @@ primary_region = "dfw"
 [[services]]
   internal_port = 8000
   protocol = "tcp"
-  auto_stop_machines = "stop"
-  auto_start_machines = true
-  min_machines_running = 0
+  # Siempre encendido: el backend lo alcanza por DNS `.internal` directo, que NO
+  # dispara auto-start (solo `.flycast`/fly-proxy lo haría). Mantener 1 máquina
+  # viva evita "connection refused" y el cold-start del modelo en cada consulta.
+  auto_stop_machines = "off"
+  auto_start_machines = false
+  min_machines_running = 1
 
   [[services.ports]]
     port = 8000
@@ -30,7 +38,10 @@ primary_region = "dfw"
     timeout = "5s"
     grace_period = "120s"
 
-# BGE-M3 necesita RAM para el modelo en memoria (decisión B1: shared-cpu-4x / 4 GB).
+# BGE-M3 necesita RAM para el modelo en memoria. El contrato sugería 4 GB, pero
+# en verificación 4 GB resultó insuficiente: el modelo fp32 (~2.3 GB) + overhead
+# de torch satura ~3.9 GB y la carga thrashea (>240 s). Subido a 8 GB (B1 §13,
+# verdad operacional). Optimización futura (B2): fp16/int8 para bajar a 4 GB.
 [[vm]]
   size = "shared-cpu-4x"
-  memory = "4gb"
+  memory = "8gb"

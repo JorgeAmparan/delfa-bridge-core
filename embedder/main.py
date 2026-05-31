@@ -21,8 +21,15 @@ Contrato de API (B1 §4.1):
 import os
 import threading
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+# El modelo va baked en la imagen (ver Dockerfile). Forzamos modo offline ANTES
+# de importar sentence-transformers: sin esto huggingface_hub contacta
+# huggingface.co en cada carga y se cuelga si el egress es lento (timeouts
+# >300s observados en Fly). Estos defaults no estorban al build (online).
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+
+from fastapi import FastAPI, HTTPException  # noqa: E402
+from pydantic import BaseModel, Field  # noqa: E402
 
 MODEL_NAME = os.getenv("BGE_MODEL_NAME", "BAAI/bge-m3")
 EMBED_DIM = 1024  # BGE-M3 — dimensión fija (decisión #1). NO 1536 (OpenAI).
