@@ -175,8 +175,9 @@ RPO 15 min, escalado independiente). Detalle: `docs/dkg_topology.md`.
   - `docyan-lde-api` — backend FastAPI (consultas, MO, clasificador, admin). Público.
   - `docyan-lde-graph` — FalkorDB self-hosted (DKG + DTM). Privado (`.internal:6379`), volumen `/data`. Config: `fly.graph.toml`. Acceso: `FALKOR_HOST`/`FALKOR_PORT`.
   - `docyan-lde-embedder` — BGE-M3 self-hosted (1024 dim). Privado (`.internal:8000`). Dir: `embedder/`. Acceso: `EMBEDDER_URL`.
-  - `docyan-lde-ingest` — worker de ingesta (Docling + LlamaIndex + GraphRAG-SDK + LiteLLM). **Se construye en B2**; no existe aún. Vive aparte porque graphrag-sdk fuerza `transformers<5.2.0`/`typer<0.26`, incompatibles con Docling y con el backend.
-- **Redis**: self-hosted en Fly (sesiones MO + APScheduler).
+  - `docyan-lde-ingest` — worker de ingesta (Docling + GraphRAG-SDK + LiteLLM + PyTorch CPU). **Construido en B2** (`worker/`). Privado (flycast:8000, solo `/health`), stateless. Consume jobs de una **cola Redis** (decisión §8 = Opción A). Vive aparte porque graphrag-sdk fuerza `transformers<5.2.0`/`typer<0.26` y arrastra PyTorch (`gliner`) + Docling (`docling-ibm-models`/TableFormer), incompatibles con el backend <1 GB. **PyTorch se conserva CPU-only**: TableFormer y gliner lo exigen incondicionalmente; no hay TableFormer en ONNX (decisión §3). Excluye los conectores (msal/etc.), lo que libera a `cryptography` del tope `<46` que impone msal (§2). Detalle: `docs/worker_architecture.md`.
+- **Cotizador pre-ingesta (`app/ingesta/`) — GATE SIN BYPASS.** Todo documento se cotiza (tiktoken + presupuesto + hard caps) ANTES de ingerir; sin saldo/confirmación no hay ingesta. Justificación: incidente PoC $5,000. En tests se mockea el almacén (`InMemoryBudgetStore`), NUNCA la decisión. Detalle: `docs/cotizador.md`. Schemas por tipo documental en `app/schemas_documentales/` (`docs/schemas_documentales.md`).
+- **Redis**: self-hosted en Fly (sesiones MO + APScheduler + cola de ingesta B2).
 - **Vercel**: frontend (las 4 UIs).
 
 Clientes en el backend: `app/graph/dkg_client.py` (fachada DKG multi-tenant,

@@ -25,8 +25,9 @@
    └──────────────────────────┘   └────────────────────────────────┘
 
    ┌────────────────────────────────────────────────────────────────┐
-   │ docyan-lde-ingest  (worker de ingesta) — SE CONSTRUYE EN B2.    │
-   │ Docling + LlamaIndex + GraphRAG-SDK + LiteLLM. NO existe en B1. │
+   │ docyan-lde-ingest  (worker de ingesta) — CONSTRUIDO EN B2.      │
+   │ Docling + GraphRAG-SDK + LiteLLM + PyTorch CPU. flycast · 8000. │
+   │ Consume jobs de la cola Redis tras el cotizador. Stateless.    │
    └────────────────────────────────────────────────────────────────┘
 ```
 
@@ -35,7 +36,14 @@
 | Backend | `docyan-lde-api` | 8000 | sí (HTTPS) | stateless | shared-cpu-2x / 1 GB |
 | Grafo | `docyan-lde-graph` | 6379 | **no** (.internal) | volumen `/data` (RPO 15m) | shared-cpu-2x / 2 GB |
 | Embedder | `docyan-lde-embedder` | 8000 | **no** (.flycast) | modelo en imagen | shared-cpu-4x / 8 GB |
-| Ingesta (B2) | `docyan-lde-ingest` | — | no | — | — |
+| Ingesta | `docyan-lde-ingest` | 8000 | **no** (.flycast) | stateless | shared-cpu-4x / 4 GB |
+
+El worker (B2) consume jobs de una **cola Redis** (decisión §8 = Opción A): el
+backend cotiza → encola tras confirmación → el worker procesa (Docling →
+GraphRAG-SDK → BGE-M3 → dedup → finalize) y escribe al grafo del tenant. Detalle
+en [`worker_architecture.md`](worker_architecture.md) y
+[`cotizador.md`](cotizador.md). **Todo job de ingesta pasa por el cotizador — no
+hay bypass.**
 
 ## Por qué separados (B1 §Contexto)
 

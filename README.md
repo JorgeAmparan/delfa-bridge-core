@@ -25,16 +25,16 @@ DOCYAN no es una CAT tool ni un traductor automático. Es un **entorno documenta
 
 ## Arquitectura (alto nivel)
 
-- **Ingesta:** Docling + LlamaIndex + **FalkorDB GraphRAG-SDK 1.1.1** (reemplaza el DII propio tras el PoC). Extracción con Gemini 2.5 Flash, QA con gpt-4o-mini. La ingesta corre en un worker aparte (`docyan-lde-ingest`, B2).
+- **Ingesta:** Docling + **FalkorDB GraphRAG-SDK 1.1.1** (reemplaza el DII propio tras el PoC). Extracción con Gemini 2.5 Flash, QA con gpt-4o-mini. Corre en un worker aparte (`docyan-lde-ingest`, **construido en B2**) que consume una cola Redis. **Todo documento pasa antes por el cotizador pre-ingesta** (tiktoken + presupuesto + hard caps; gate sin bypass — `docs/cotizador.md`). Schemas por tipo documental: `docs/schemas_documentales.md`.
 - **Embeddings:** **BGE-M3 self-hosted** (multilingüe, soberanía de datos, costo cero recurrente), servicio aparte `docyan-lde-embedder`, 1024 dim.
 - **Grafo:** FalkorDB (DKG + DTM) self-hosted en `docyan-lde-graph`, multi-tenancy por `graph_name`, versionado in-place. RPO 15 min.
 - **Backend:** Python 3.11 + FastAPI, desplegado en **Fly.io** (`docyan-lde-api`, imagen <1 GB).
 
-### Topología de procesos (B1)
+### Topología de procesos (B1 + B2)
 
 DOCYAN corre como **4 procesos Fly separados desde día 1**: `docyan-lde-api`
 (backend), `docyan-lde-graph` (FalkorDB), `docyan-lde-embedder` (BGE-M3) y
-`docyan-lde-ingest` (worker de ingesta, B2). Detalle, diagrama y rutas de
+`docyan-lde-ingest` (worker de ingesta, **construido en B2**). Detalle, diagrama y rutas de
 comunicación en **[`docs/dkg_topology.md`](docs/dkg_topology.md)**; ontología del
 grafo en **[`docs/dkg_ontology.md`](docs/dkg_ontology.md)**.
 - **Frontend:** Next.js 15 + React 19 + Tailwind + shadcn/ui, desplegado en **Vercel**.

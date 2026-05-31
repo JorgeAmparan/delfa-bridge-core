@@ -46,8 +46,9 @@ langextract==1.2.0
 llama-index==0.14.19
 llama-index-core==0.14.19
 
-# Cotizador pre-ingesta (B3)
+# Cotizador pre-ingesta (B2)
 tiktoken==0.12.0
+pdfminer.six==20250506   # extracción de texto ligera para cotizar PDF (sin torch)
 
 # Reconstrucción de formato (B4/B5)
 weasyprint

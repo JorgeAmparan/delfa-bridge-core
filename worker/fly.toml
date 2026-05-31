@@ -1,0 +1,45 @@
+# docyan-lde-ingest — worker de ingesta (B2 §4.1).
+# 4º proceso de la topología DOCYAN. Stack pesado (Docling + GraphRAG-SDK +
+# LiteLLM + PyTorch CPU) aislado del backend de consultas. Stateless (sin volumen):
+# el documento llega por referencia (document store) y el resultado va al grafo.
+#
+# Deploy desde la raíz del repo (el Dockerfile copia app/ y worker/):
+#   flyctl deploy --app docyan-lde-ingest --dockerfile worker/Dockerfile
+app = "docyan-lde-ingest"
+primary_region = "dfw"
+
+[build]
+  dockerfile = "worker/Dockerfile"
+
+[env]
+  # Endpoints internos (los SECRETS reales — API keys — se fijan con flyctl secrets).
+  FALKOR_HOST = "docyan-lde-graph.internal"
+  FALKOR_PORT = "6379"
+  EMBEDDER_URL = "http://docyan-lde-embedder.internal:8000"
+  HF_HUB_OFFLINE = "1"
+  TRANSFORMERS_OFFLINE = "1"
+
+# Servicio HTTP PRIVADO (flycast / .internal). SIN handlers públicos: el worker
+# recibe jobs por la cola Redis y sirve /health a la red privada de Fly.
+[[services]]
+  internal_port = 8000
+  protocol = "tcp"
+  # Jobs largos: la máquina puede dormirse entre ráfagas y despertar con la cola.
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[services.ports]]
+    port = 8000
+
+  [[services.tcp_checks]]
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "60s"
+
+# Perfil de recursos (§4.1): la ingesta carga Docling+TableFormer+torch CPU y es
+# intensiva en CPU/RAM. Recomendación inicial shared-cpu-4x / 4 GB; ajustar según
+# el peso real de la imagen y el consumo observado (reporte §11).
+[[vm]]
+  size = "shared-cpu-4x"
+  memory = "4gb"

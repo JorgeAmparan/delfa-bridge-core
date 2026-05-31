@@ -45,11 +45,23 @@ httpx==0.28.1
 falkordb>=1.0.0
 redis>=5.0.0
 
+# Cotizador pre-ingesta B2 (corre en el BACKEND, gate sin bypass):
+#  - tiktoken: medición de tokens del documento (app/ingesta/cotizador.py).
+#  - pdfminer.six: extracción de texto LIGERA para cotizar PDF (sin torch; el
+#    parseo rico con Docling es del worker). Requiere cryptography>=36 (compatible <46).
+tiktoken==0.12.0
+pdfminer.six==20250506
+
 # Fuentes documentales conservadas (app/ingest_sources/*)
 google-api-python-client==2.149.0   # Google Drive
 google-auth==2.49.1                  # Google Drive / OneDrive auth (>=2.48.1 lo exige google-genai)
 msal==1.31.1                         # OneDrive (MS Graph)
 paramiko==3.5.1                      # FTP/SFTP
+# cryptography: msal 1.31.1 impone cryptography<46 (>=2.5). NO pinear >=46 en el
+# backend (rompería msal). El worker NO lleva msal → ahí cryptography queda libre
+# para litellm/graphrag-sdk. Pendiente B0 'cryptography==46' resuelto por topología
+# (reporte B2 §2). Pin defensivo explícito del tope:
+cryptography<46
 
 # Helpers DB genéricos (app/integrations/sql.py — Postgres/Supabase)
 SQLAlchemy==2.0.48

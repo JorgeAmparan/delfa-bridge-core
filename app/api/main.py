@@ -14,6 +14,8 @@ from app.api.routers import (
     documents,
     governance,
     ingest_sources,
+    ingesta,
+    observations,
     search,
     trail,
 )
@@ -51,6 +53,8 @@ app.include_router(search.router)
 app.include_router(governance.router)
 app.include_router(trail.router)
 app.include_router(ingest_sources.router)
+app.include_router(ingesta.router)
+app.include_router(observations.router)
 app.include_router(billing.router)
 app.include_router(chat.router)
 app.include_router(admin.router)

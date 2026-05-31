@@ -1,0 +1,52 @@
+# ============================================================
+# DOCYAN LDE — worker de ingesta `docyan-lde-ingest` (B2 §4.1)
+# ============================================================
+# Stack pesado de ingesta, AISLADO del backend principal (que se mantiene <1 GB).
+# NO incluye los conectores documentales (msal/google-api-python-client/paramiko):
+# el modo conectado vive en el backend (B12), no en el worker. Esa exclusión es la
+# que libera a `cryptography` del tope <46 que impone msal (ver §2 del reporte):
+# aquí litellm/graphrag-sdk resuelven cryptography sin conflicto.
+#
+# PyTorch (CPU-only) NO se lista aquí: se instala explícitamente en el Dockerfile
+# desde el índice CPU de PyTorch ANTES de este archivo, para evitar que pip
+# arrastre la build CUDA (~3 GB). docling-ibm-models y gliner lo requieren (§3).
+# ------------------------------------------------------------
+
+# Motor de ingesta y grafo (reemplaza al DII). Arrastra: falkordb 1.6.1, gliner,
+# hnswlib, onnxruntime, numpy, scipy, tiktoken, sentencepiece.
+graphrag-sdk==1.1.1
+
+# LLM-agnóstico (prefijo gemini/ obligatorio). Pin B1 = versión del smoke test.
+litellm==1.86.2
+
+# Conversión universal multi-formato + OCR + tablas complejas (TableFormer).
+# Pin = versión validada en el entorno de este sprint (drift respecto al 2.84.0
+# del contrato; ver reporte §3). Arrastra docling-ibm-models (torch).
+docling==2.96.0
+
+# Indexación semántica (disponible; el path activo B2 es Docling→Markdown→SDK).
+llama-index-core==0.14.19
+
+# Proveedores LLM de ingesta.
+google-genai==1.70.0
+openai==2.30.0
+
+# Cotizador / conteo de tokens (también lo arrastra graphrag-sdk).
+tiktoken==0.12.0
+
+# Cliente HTTP al embedder BGE-M3 self-hosted (app/embeddings/bge_client.py).
+httpx==0.28.1
+
+# Cola de jobs + estado (Redis) y persistencia (Supabase: registry + storage).
+redis>=5.0.0
+supabase==2.28.3
+
+# Health server sobre flycast + framework.
+fastapi==0.135.3
+uvicorn==0.42.0
+pydantic==2.12.5
+pydantic-settings==2.13.1
+python-dotenv==1.2.2
+
+# Retry ante rate limiting de Gemini (PoC: 1,506 retries en multi-doc).
+tenacity==9.1.4
