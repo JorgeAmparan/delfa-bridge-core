@@ -8,14 +8,18 @@
 # Deploy (PENDIENTE DE JORGE — ver redis/README.md):
 #   flyctl apps create docyan-lde-redis
 #   flyctl volumes create redis_data --region dfw --size 5 --app docyan-lde-redis
-#   flyctl deploy --app docyan-lde-redis --dockerfile redis/Dockerfile
+#   flyctl deploy --app docyan-lde-redis --config redis/fly.toml
+#
 app = "docyan-lde-redis"
 primary_region = "dfw"
 
+# La ruta del dockerfile es relativa a ESTE fly.toml (no a la raíz del repo):
+# flyctl resuelve [build].dockerfile respecto al directorio del --config. Como
+# fly.toml y Dockerfile están ambos en redis/, la ruta correcta es "Dockerfile".
+# El build context queda en redis/, así el COPY redis.conf del Dockerfile resuelve.
 [build]
-  dockerfile = "redis/Dockerfile"
+  dockerfile = "Dockerfile"
 
-# Volumen persistente: AOF + sesiones sobreviven reinicios/redeploys.
 [mounts]
   source = "redis_data"
   destination = "/data"
@@ -38,7 +42,7 @@ primary_region = "dfw"
     timeout = "5s"
     grace_period = "30s"
 
-# Redis es ligero (tier alfa). shared-cpu-1x / 256 MB.
+# Redis es ligero (tier alfa). shared-cpu-1x / 512 MB (headroom para AOF rewrite).
 [[vm]]
   size = "shared-cpu-1x"
   memory = "512mb"

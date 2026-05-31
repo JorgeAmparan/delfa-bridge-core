@@ -34,7 +34,7 @@ independiente). `REDIS_QUEUE_URL` y `REDIS_URL` pueden apuntar a esta misma app
 ```bash
 flyctl apps create docyan-lde-redis
 flyctl volumes create redis_data --region dfw --size 5 --app docyan-lde-redis
-flyctl deploy --app docyan-lde-redis --dockerfile redis/Dockerfile   # desde la raíz
+flyctl deploy --app docyan-lde-redis --config redis/fly.toml   # context = redis/
 
 # Apuntar backend y worker a este Redis (red privada Fly):
 flyctl secrets set REDIS_URL="redis://docyan-lde-redis.internal:6379/1" \
@@ -46,14 +46,12 @@ flyctl secrets set REDIS_QUEUE_URL="redis://docyan-lde-redis.internal:6379/0" \
 Verificación: `flyctl status --app docyan-lde-redis` y, desde un proceso en la red
 privada, `redis-cli -h docyan-lde-redis.internal ping` → `PONG`.
 
-## Observación técnica para Jorge (no bloqueante)
+## Nota de capacidad
 
-`maxmemory 256mb` sobre una VM de 256 MB es ajustado: la reescritura de AOF usa
-copy-on-write y el SO necesita headroom, por lo que en carga real Redis podría
-acercarse al límite de la VM. Si la cola/sesiones crecen en pilotos, conviene
-**subir la VM a 512 MB** (y dejar `maxmemory ~256–384mb`) o bajar `maxmemory` a
-~200mb. Se deja como está según el contrato B2.1; queda anotado para ajustar con
-datos de uso reales.
+`maxmemory 256mb` sobre una **VM de 512 MB** (`fly.toml`): deja headroom para la
+reescritura de AOF (copy-on-write) + el SO, evitando que Redis se acerque al
+límite de la VM bajo carga. Si la cola/sesiones crecen en pilotos, puede subirse
+`maxmemory` hacia ~384mb sin tocar la VM. Ajustar con datos de uso reales.
 
 ## Desarrollo local
 
