@@ -1,0 +1,44 @@
+# docyan-lde-redis — Redis compartido self-hosted (B2.1).
+# 5º proceso de la topología DOCYAN. Doble propósito (un solo Redis):
+#   - Cola de jobs de ingesta (B2, REDIS_QUEUE_URL).
+#   - Session Manager + APScheduler backend (B4, decisión #6 Paso C).
+# Levantado como Fly app aparte por coherencia con la topología de procesos
+# separados (cada componente escala/respalda independiente).
+#
+# Deploy (PENDIENTE DE JORGE — ver redis/README.md):
+#   flyctl apps create docyan-lde-redis
+#   flyctl volumes create redis_data --region dfw --size 5 --app docyan-lde-redis
+#   flyctl deploy --app docyan-lde-redis --dockerfile redis/Dockerfile
+app = "docyan-lde-redis"
+primary_region = "dfw"
+
+[build]
+  dockerfile = "redis/Dockerfile"
+
+# Volumen persistente: AOF + sesiones sobreviven reinicios/redeploys.
+[mounts]
+  source = "redis_data"
+  destination = "/data"
+
+# Servicio TCP interno (compatible Redis). SIN http_service público: solo se
+# alcanza desde la red privada de Fly (docyan-lde-redis.internal:6379 / *.flycast).
+[[services]]
+  internal_port = 6379
+  protocol = "tcp"
+  # min_machines_running = 1 + sin auto_stop: cola y sesiones no deben dormirse.
+  auto_stop_machines = "off"
+  auto_start_machines = false
+  min_machines_running = 1
+
+  [[services.ports]]
+    port = 6379
+
+  [[services.tcp_checks]]
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "30s"
+
+# Redis es ligero (tier alfa). shared-cpu-1x / 256 MB.
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

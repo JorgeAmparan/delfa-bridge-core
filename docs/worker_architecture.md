@@ -49,11 +49,13 @@ Elegida sobre HTTP directo (B) y Fly machine API (C):
   vez de `rq`: no añade dependencia nueva al backend ni acopla su modelo de
   worker. El backend solo usa `redis` (ya en deps); el SDK pesado nunca lo toca.
 
-**Recurso Redis:** se reutiliza el Redis del stack (decisión #6, sesiones MO +
-APScheduler) vía `REDIS_QUEUE_URL`. Si no hubiera un Redis accesible aparte, las
-opciones son levantar una Fly app `docyan-lde-redis` o usar Upstash/Redis Cloud.
-**PENDIENTE DE JORGE (ops):** confirmar el recurso Redis de producción para la
-cola y fijar `REDIS_QUEUE_URL` como secret del worker y del backend.
+**Recurso Redis (DECIDIDO, B2.1):** un solo Redis compartido, levantado como Fly
+app aparte **`docyan-lde-redis`** (dir `redis/`), con doble propósito: cola de
+ingesta (B2, `REDIS_QUEUE_URL`) + Session Manager/APScheduler (B4, `REDIS_URL`,
+decisión #6). Coherente con la topología de procesos separados. Config: AOF +
+`maxmemory-policy noeviction` (la cola/sesiones nunca se evictan en silencio).
+Deploy y secrets en [`../redis/README.md`](../redis/README.md) — el `flyctl
+deploy` queda PENDIENTE DE JORGE (igual que el del worker).
 
 ### Flujo del gate (sin bypass)
 

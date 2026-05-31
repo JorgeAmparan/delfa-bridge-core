@@ -32,9 +32,10 @@ DOCYAN no es una CAT tool ni un traductor automático. Es un **entorno documenta
 
 ### Topología de procesos (B1 + B2)
 
-DOCYAN corre como **4 procesos Fly separados desde día 1**: `docyan-lde-api`
-(backend), `docyan-lde-graph` (FalkorDB), `docyan-lde-embedder` (BGE-M3) y
-`docyan-lde-ingest` (worker de ingesta, **construido en B2**). Detalle, diagrama y rutas de
+DOCYAN corre como **5 procesos Fly separados**: `docyan-lde-api` (backend),
+`docyan-lde-graph` (FalkorDB), `docyan-lde-embedder` (BGE-M3), `docyan-lde-ingest`
+(worker de ingesta, **B2**) y `docyan-lde-redis` (Redis compartido: cola de
+ingesta + sesiones MO/APScheduler, **B2.1**). Detalle, diagrama y rutas de
 comunicación en **[`docs/dkg_topology.md`](docs/dkg_topology.md)**; ontología del
 grafo en **[`docs/dkg_ontology.md`](docs/dkg_ontology.md)**.
 - **Frontend:** Next.js 15 + React 19 + Tailwind + shadcn/ui, desplegado en **Vercel**.

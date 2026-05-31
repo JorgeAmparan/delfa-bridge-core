@@ -1,10 +1,11 @@
-# DKG — Topología de procesos (B1)
+# DKG — Topología de procesos (B1 + B2/B2.1)
 
-> **DOCYAN LDE™ by XCID.** Decisión arquitectónica central de B1: **4 procesos
+> **DOCYAN LDE™ by XCID.** Decisión arquitectónica central de B1: **procesos
 > separados desde día 1, no monolítico** (B1 §Contexto). Cada uno escala y se
-> respalda independiente.
+> respalda independiente. Hoy son **5 procesos** (B2 agregó el worker de ingesta;
+> B2.1 agregó el Redis compartido).
 
-## Los 4 procesos
+## Los 5 procesos
 
 ```
                        Internet (público, HTTPS)
@@ -24,11 +25,13 @@
    │ shared-cpu-2x / 2 GB     │   │ shared-cpu-4x / 4 GB · sin vol │
    └──────────────────────────┘   └────────────────────────────────┘
 
-   ┌────────────────────────────────────────────────────────────────┐
-   │ docyan-lde-ingest  (worker de ingesta) — CONSTRUIDO EN B2.      │
-   │ Docling + GraphRAG-SDK + LiteLLM + PyTorch CPU. flycast · 8000. │
-   │ Consume jobs de la cola Redis tras el cotizador. Stateless.    │
-   └────────────────────────────────────────────────────────────────┘
+   ┌────────────────────────────────────┐  ┌──────────────────────────────┐
+   │ docyan-lde-ingest (worker, B2)     │  │ docyan-lde-redis (B2.1)      │
+   │ Docling + GraphRAG-SDK + LiteLLM + │◄─┤ Redis 7-alpine · 6379        │
+   │ PyTorch CPU. flycast · 8000.       │  │ cola ingesta + sesiones MO   │
+   │ Consume la cola Redis tras cotizar.│  │ AOF · noeviction · vol /data │
+   └────────────────────────────────────┘  └──────────────────────────────┘
+            backend ──encola jobs──►  docyan-lde-redis  ◄──BLPOP── worker
 ```
 
 | Proceso | Fly app | Puerto | Público | Persistencia | VM |
@@ -37,13 +40,17 @@
 | Grafo | `docyan-lde-graph` | 6379 | **no** (.internal) | volumen `/data` (RPO 15m) | shared-cpu-2x / 2 GB |
 | Embedder | `docyan-lde-embedder` | 8000 | **no** (.flycast) | modelo en imagen | shared-cpu-4x / 8 GB |
 | Ingesta | `docyan-lde-ingest` | 8000 | **no** (.flycast) | stateless | shared-cpu-4x / 4 GB |
+| Redis | `docyan-lde-redis` | 6379 | **no** (.flycast) | volumen `/data` (AOF) | shared-cpu-1x / 256 MB |
 
-El worker (B2) consume jobs de una **cola Redis** (decisión §8 = Opción A): el
-backend cotiza → encola tras confirmación → el worker procesa (Docling →
-GraphRAG-SDK → BGE-M3 → dedup → finalize) y escribe al grafo del tenant. Detalle
-en [`worker_architecture.md`](worker_architecture.md) y
-[`cotizador.md`](cotizador.md). **Todo job de ingesta pasa por el cotizador — no
-hay bypass.**
+Son **5 procesos** (B1 levantó 3; B2 agregó `docyan-lde-ingest`; B2.1 agregó
+`docyan-lde-redis`). El worker (B2) consume jobs de la **cola Redis** (decisión
+§8 = Opción A): el backend cotiza → encola tras confirmación → el worker procesa
+(Docling → GraphRAG-SDK → BGE-M3 → dedup → finalize) y escribe al grafo del
+tenant. **`docyan-lde-redis` es compartido** (B2.1): la misma app sirve la cola de
+ingesta (`REDIS_QUEUE_URL`) y, desde B4, el Session Manager + APScheduler
+(`REDIS_URL`, decisión #6). Detalle en [`worker_architecture.md`](worker_architecture.md),
+[`cotizador.md`](cotizador.md) y [`../redis/README.md`](../redis/README.md). **Todo
+job de ingesta pasa por el cotizador — no hay bypass.**
 
 ## Por qué separados (B1 §Contexto)
 

@@ -166,10 +166,11 @@ El tipo de documento define tanto el schema de extracción como la visualizació
 - shadcn/ui sobre Radix Primitives
 - react-i18next (independiente del framework)
 
-### Hosting — topología de 4 procesos Fly (B1)
+### Hosting — topología de 5 procesos Fly (B1 + B2/B2.1)
 Desde B1 NO es monolítico. Cada componente es una Fly app separada (razón:
 imagen backend <1 GB, BGE-M3 arrastra torch ~3 GB, FalkorDB necesita volumen +
-RPO 15 min, escalado independiente). Detalle: `docs/dkg_topology.md`.
+RPO 15 min, escalado independiente). B2 agregó el worker de ingesta; B2.1 agregó
+el Redis compartido. Detalle: `docs/dkg_topology.md`.
 
 - **Fly.io**:
   - `docyan-lde-api` — backend FastAPI (consultas, MO, clasificador, admin). Público.
@@ -177,7 +178,8 @@ RPO 15 min, escalado independiente). Detalle: `docs/dkg_topology.md`.
   - `docyan-lde-embedder` — BGE-M3 self-hosted (1024 dim). Privado (`.internal:8000`). Dir: `embedder/`. Acceso: `EMBEDDER_URL`.
   - `docyan-lde-ingest` — worker de ingesta (Docling + GraphRAG-SDK + LiteLLM + PyTorch CPU). **Construido en B2** (`worker/`). Privado (flycast:8000, solo `/health`), stateless. Consume jobs de una **cola Redis** (decisión §8 = Opción A). Vive aparte porque graphrag-sdk fuerza `transformers<5.2.0`/`typer<0.26` y arrastra PyTorch (`gliner`) + Docling (`docling-ibm-models`/TableFormer), incompatibles con el backend <1 GB. **PyTorch se conserva CPU-only**: TableFormer y gliner lo exigen incondicionalmente; no hay TableFormer en ONNX (decisión §3). Excluye los conectores (msal/etc.), lo que libera a `cryptography` del tope `<46` que impone msal (§2). Detalle: `docs/worker_architecture.md`.
 - **Cotizador pre-ingesta (`app/ingesta/`) — GATE SIN BYPASS.** Todo documento se cotiza (tiktoken + presupuesto + hard caps) ANTES de ingerir; sin saldo/confirmación no hay ingesta. Justificación: incidente PoC $5,000. En tests se mockea el almacén (`InMemoryBudgetStore`), NUNCA la decisión. Detalle: `docs/cotizador.md`. Schemas por tipo documental en `app/schemas_documentales/` (`docs/schemas_documentales.md`).
-- **Redis**: self-hosted en Fly (sesiones MO + APScheduler + cola de ingesta B2).
+  - `docyan-lde-redis` — Redis 7-alpine compartido. **Construido en B2.1** (`redis/`). Privado (`.internal:6379` / flycast), volumen `redis_data` en `/data`, AOF + `maxmemory-policy noeviction`. Doble propósito: **cola de ingesta** (B2, `REDIS_QUEUE_URL`) + **Session Manager/APScheduler** (B4, `REDIS_URL`, decisión #6). Detalle: `redis/README.md`.
+- **Redis**: lo provee `docyan-lde-redis` (cola de ingesta B2 + sesiones MO/APScheduler B4).
 - **Vercel**: frontend (las 4 UIs).
 
 Clientes en el backend: `app/graph/dkg_client.py` (fachada DKG multi-tenant,
