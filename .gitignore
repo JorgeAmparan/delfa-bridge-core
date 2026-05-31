@@ -29,3 +29,6 @@ node_modules/
 
 # Artefacto intermedio del pipeline OpenAPI→TS
 openapi.json
+
+# Claude Code runtime state
+.claude/
