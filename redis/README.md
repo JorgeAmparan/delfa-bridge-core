@@ -31,10 +31,21 @@ independiente). `REDIS_QUEUE_URL` y `REDIS_URL` pueden apuntar a esta misma app
 
 ## Operación / deploy (PENDIENTE DE JORGE)
 
+El deploy se hace **desde `redis/`** (no desde la raíz). Motivo verificado
+empíricamente (B2.1 2/2): el `.dockerignore` de la raíz excluye todo salvo el
+backend (`*` + `!app` …), así que con context = raíz el directorio `redis/` no
+entra al context (deploy mostraba `context: 2B` y `COPY redis.conf` fallaba con
+`"/redis.conf": not found`). Desplegando desde `redis/`, el build context es
+`redis/` y `COPY redis.conf` resuelve (build local exitoso, imagen ~30–40 MB
+sobre `redis:7-alpine`).
+
 ```bash
 flyctl apps create docyan-lde-redis
 flyctl volumes create redis_data --region dfw --size 5 --app docyan-lde-redis
-flyctl deploy --app docyan-lde-redis --config redis/fly.toml   # context = redis/
+
+cd redis                                      # context = redis/ (NO la raíz)
+flyctl deploy --app docyan-lde-redis          # fly.toml y Dockerfile en el cwd
+cd ..
 
 # Apuntar backend y worker a este Redis (red privada Fly):
 flyctl secrets set REDIS_URL="redis://docyan-lde-redis.internal:6379/1" \

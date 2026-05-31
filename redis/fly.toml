@@ -5,18 +5,19 @@
 # Levantado como Fly app aparte por coherencia con la topología de procesos
 # separados (cada componente escala/respalda independiente).
 #
-# Deploy (PENDIENTE DE JORGE — ver redis/README.md):
+# Deploy (PENDIENTE DE JORGE — ver redis/README.md). DESDE redis/ (no la raíz),
+# para que el build context sea redis/ y el .dockerignore de la raíz (que excluye
+# todo salvo el backend) NO aplique — verificado empíricamente (B2.1 2/2):
 #   flyctl apps create docyan-lde-redis
 #   flyctl volumes create redis_data --region dfw --size 5 --app docyan-lde-redis
-#   flyctl deploy --app docyan-lde-redis --config redis/fly.toml
+#   cd redis && flyctl deploy --app docyan-lde-redis
 #
 app = "docyan-lde-redis"
 primary_region = "dfw"
 
-# La ruta del dockerfile es relativa a ESTE fly.toml (no a la raíz del repo):
-# flyctl resuelve [build].dockerfile respecto al directorio del --config. Como
-# fly.toml y Dockerfile están ambos en redis/, la ruta correcta es "Dockerfile".
-# El build context queda en redis/, así el COPY redis.conf del Dockerfile resuelve.
+# Deploy DESDE redis/ → context = redis/, config = ./fly.toml (auto-detectado),
+# dockerfile = ./Dockerfile. Así `COPY redis.conf` del Dockerfile resuelve y el
+# .dockerignore de la raíz no recorta el context. NO desplegar desde la raíz.
 [build]
   dockerfile = "Dockerfile"
 
