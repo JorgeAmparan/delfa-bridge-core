@@ -49,6 +49,10 @@ def test_generador_produce_relaciones_positivas():
     assert schema.es_generado_dinamicamente
     assert len(schema.entidades) >= 1
     assert len(schema.relaciones) > 0, "el generador NO debe devolver 0 relaciones (caso LGPGIR)"
+    # to_sdk_schema() requiere graphrag_sdk, que vive en el worker, NO en el
+    # backend ni en requirements.test.txt (separación B0.5/B2). Se salta donde el
+    # SDK no está (CI del backend) y corre donde sí (worker/dev).
+    pytest.importorskip("graphrag_sdk")
     schema.to_sdk_schema()  # debe construir un GraphSchema válido del SDK
 
 
