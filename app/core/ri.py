@@ -1,3 +1,4 @@
+import functools
 import os
 
 from dotenv import load_dotenv
@@ -8,9 +9,23 @@ from app.core.matrix import TraceabilityMatrix
 
 load_dotenv()
 
-# Variable canónica GEMINI_API_KEY (adenda §5); GOOGLE_API_KEY compat deprecado (B1).
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
 RI_MODEL = "gemini-2.5-flash"
+
+
+@functools.lru_cache(maxsize=1)
+def get_genai_client() -> genai.Client:
+    """
+    Inicialización perezosa del cliente Gemini (B1 §2.1).
+
+    El cliente NO se construye al importar el módulo: solo al primer uso.
+    Así los módulos arrancan sin `GEMINI_API_KEY` en el entorno (p. ej. en
+    arranque de la API que no toca este pipeline), y fallan únicamente al
+    invocar la función. El resultado se cachea en memoria (singleton).
+
+    Variable canónica GEMINI_API_KEY (adenda §5); GOOGLE_API_KEY es compat
+    deprecado que se retira junto al DII.
+    """
+    return genai.Client(api_key=os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
 
 
 class ResponseIntelligence:
@@ -98,7 +113,7 @@ Reglas:
 - NO inventes información que no esté en las entidades."""
 
         try:
-            respuesta_llm = client.models.generate_content(
+            respuesta_llm = get_genai_client().models.generate_content(
                 model=RI_MODEL,
                 contents=prompt,
             )

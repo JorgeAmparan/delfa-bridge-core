@@ -12,6 +12,40 @@ services:
     volumes:
       - ./data:/app/data
     restart: unless-stopped
+    depends_on:
+      - docyan-graph
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── DKG: FalkorDB local (espejo de docyan-lde-graph en Fly). B1 §3 / §13. ──
+  # Mismo pin por digest que fly.graph.toml (módulo graph v4.18.0).
+  docyan-graph:
+    image: falkordb/falkordb@sha256:58a95a33d591b25648bbb13268a23329aa39e70b4cbeff0752c65f8b4beba6db
+    container_name: docyan-lde-graph
+    ports:
+      - "6379:6379"
+    command: ["--appendonly", "yes", "--appendfsync", "everysec", "--dir", "/data"]
+    volumes:
+      - graph_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ── Embedder: BGE-M3 local (espejo de docyan-lde-embedder en Fly). B1 §4. ──
+  docyan-embedder:
+    build: ./embedder
+    container_name: docyan-lde-embedder
+    ports:
+      - "8080:8000"
+    environment:
+      - BGE_MODEL_NAME=BAAI/bge-m3
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -68,4 +102,6 @@ networks:
 
 volumes:
   data:
+    driver: local
+  graph_data:
     driver: local

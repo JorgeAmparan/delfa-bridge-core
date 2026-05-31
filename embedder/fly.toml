@@ -1,0 +1,36 @@
+# docyan-lde-embedder — BGE-M3 self-hosted (B1 §4).
+# Proceso Fly INDEPENDIENTE. Sin acceso público: solo *.flycast / .internal.
+# Sin volumen persistente: el modelo va en la imagen.
+app = "docyan-lde-embedder"
+primary_region = "dfw"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8000"
+  BGE_MODEL_NAME = "BAAI/bge-m3"
+  HF_HOME = "/app/.hf_cache"
+
+# Servicio interno: escucha en 8000 sobre la red privada de Fly (.internal /
+# .flycast). NO se expone http_service público — el backend lo alcanza por DNS
+# interno (EMBEDDER_URL=http://docyan-lde-embedder.internal:8000).
+[[services]]
+  internal_port = 8000
+  protocol = "tcp"
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[services.ports]]
+    port = 8000
+
+  [[services.tcp_checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "120s"
+
+# BGE-M3 necesita RAM para el modelo en memoria (decisión B1: shared-cpu-4x / 4 GB).
+[[vm]]
+  size = "shared-cpu-4x"
+  memory = "4gb"

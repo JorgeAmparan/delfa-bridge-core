@@ -7,7 +7,16 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.auth import router as auth_router
-from app.api.routers import billing, chat, documents, governance, ingest_sources, search, trail
+from app.api.routers import (
+    admin,
+    billing,
+    chat,
+    documents,
+    governance,
+    ingest_sources,
+    search,
+    trail,
+)
 
 load_dotenv()
 
@@ -44,6 +53,7 @@ app.include_router(trail.router)
 app.include_router(ingest_sources.router)
 app.include_router(billing.router)
 app.include_router(chat.router)
+app.include_router(admin.router)
 
 static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 app.mount("/static", StaticFiles(directory=static_dir), name="static")

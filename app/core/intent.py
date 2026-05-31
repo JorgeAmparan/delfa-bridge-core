@@ -1,3 +1,4 @@
+import functools
 import json
 import os
 
@@ -6,11 +7,22 @@ from google import genai
 
 load_dotenv()
 
-# Configura Gemini con nuevo SDK.
-# Variable canónica GEMINI_API_KEY (adenda §5); GOOGLE_API_KEY es compat deprecado
-# (se retira con el DII en B1).
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
 GEMINI_MODEL = "gemini-2.5-flash"
+
+
+@functools.lru_cache(maxsize=1)
+def get_genai_client() -> genai.Client:
+    """
+    Inicialización perezosa del cliente Gemini (B1 §2.1).
+
+    No se construye al importar el módulo, solo al primer uso. Permite que el
+    módulo se importe sin `GEMINI_API_KEY` en el entorno; falla únicamente al
+    invocar la función. Cacheado en memoria (singleton).
+
+    Variable canónica GEMINI_API_KEY (adenda §5); GOOGLE_API_KEY es compat
+    deprecado que se retira con el DII.
+    """
+    return genai.Client(api_key=os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
 
 # ── Tipos de documento conocidos ─────────────────────────────────────────────
 
@@ -112,7 +124,7 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura exacta:
 }}"""
 
         try:
-            respuesta = client.models.generate_content(
+            respuesta = get_genai_client().models.generate_content(
                 model=GEMINI_MODEL,
                 contents=prompt
             )
@@ -187,7 +199,7 @@ Responde ÚNICAMENTE con un JSON válido:
 }}"""
 
         try:
-            respuesta = client.models.generate_content(
+            respuesta = get_genai_client().models.generate_content(
                 model=GEMINI_MODEL,
                 contents=prompt
             )

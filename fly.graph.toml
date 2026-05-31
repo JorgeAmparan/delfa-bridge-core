@@ -1,0 +1,48 @@
+# docyan-lde-graph — FalkorDB self-hosted (B1 §3).
+# Base de grafo persistente del DKG/DTM. Proceso Fly INDEPENDIENTE del backend
+# (decisión #7a + #12: volumen persistente, RPO 15 min, perfil distinto al
+# backend stateless).
+#
+# Imagen pineada por DIGEST para reproducibilidad (B1 §3.1: "investiga la versión
+# estable y pinea"). Este digest corresponde a falkordb/falkordb:latest del
+# 30 may 2026 → módulo graph v4.18.0, redis 8.6.2 (verificado contra la
+# instancia local de desarrollo).
+app = "docyan-lde-graph"
+primary_region = "dfw"
+
+[build]
+  image = "falkordb/falkordb@sha256:58a95a33d591b25648bbb13268a23329aa39e70b4cbeff0752c65f8b4beba6db"
+
+[env]
+  # Persistencia: AOF + snapshots RDB en el volumen montado (ver [mounts]).
+  # everysec = fsync cada segundo: cota superior de pérdida ~1s << RPO 15 min (#12).
+  FALKORDB_ARGS = "--appendonly yes --appendfsync everysec --dir /data"
+
+# Volumen persistente del grafo (B1 §3.1). El grafo sobrevive reinicios/redeploys.
+[mounts]
+  source = "docyan_graph_data"
+  destination = "/data"
+
+# Servicio TCP interno (compatible Redis). SIN http_service público:
+# FalkorDB solo se alcanza desde la red privada de Fly
+# (docyan-lde-graph.internal:6379 / *.flycast). B1 §3.1.
+[[services]]
+  internal_port = 6379
+  protocol = "tcp"
+  # min_machines_running = 1 + sin auto_stop: la base de datos no debe dormirse.
+  auto_stop_machines = "off"
+  auto_start_machines = false
+  min_machines_running = 1
+
+  [[services.ports]]
+    port = 6379
+
+  [[services.tcp_checks]]
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "30s"
+
+# FalkorDB es más exigente en RAM que el backend (B1 §3.1: shared-cpu-2x / 2 GB).
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "2gb"

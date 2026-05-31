@@ -35,8 +35,8 @@ dependencies = [
     "docling",
     "llama-index",
     "langextract",
-    "graphrag-sdk",   # pin en B1
-    "litellm",        # pin en B1 (prefijo gemini/ obligatorio)
+    "graphrag-sdk==1.1.1",   # pin B1 (resolver real: arrastra falkordb 1.6.1, gliner, hnswlib, onnxruntime)
+    "litellm==1.86.2",       # pin B1 = versión del smoke test GEMINI (prefijo gemini/ obligatorio)
     "tiktoken",       # cotizador pre-ingesta (B3)
     "tenacity",       # mitigación rate limiting Gemini (B1/B3)
     # --- Scheduler (decisión #3) ---

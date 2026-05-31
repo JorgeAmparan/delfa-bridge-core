@@ -166,9 +166,23 @@ El tipo de documento define tanto el schema de extracción como la visualizació
 - shadcn/ui sobre Radix Primitives
 - react-i18next (independiente del framework)
 
-### Hosting
-- **Fly.io**: backend + FalkorDB + Redis. App: `docyan-lde-api`.
+### Hosting — topología de 4 procesos Fly (B1)
+Desde B1 NO es monolítico. Cada componente es una Fly app separada (razón:
+imagen backend <1 GB, BGE-M3 arrastra torch ~3 GB, FalkorDB necesita volumen +
+RPO 15 min, escalado independiente). Detalle: `docs/dkg_topology.md`.
+
+- **Fly.io**:
+  - `docyan-lde-api` — backend FastAPI (consultas, MO, clasificador, admin). Público.
+  - `docyan-lde-graph` — FalkorDB self-hosted (DKG + DTM). Privado (`.internal:6379`), volumen `/data`. Config: `fly.graph.toml`. Acceso: `FALKOR_HOST`/`FALKOR_PORT`.
+  - `docyan-lde-embedder` — BGE-M3 self-hosted (1024 dim). Privado (`.internal:8000`). Dir: `embedder/`. Acceso: `EMBEDDER_URL`.
+  - `docyan-lde-ingest` — worker de ingesta (Docling + LlamaIndex + GraphRAG-SDK + LiteLLM). **Se construye en B2**; no existe aún. Vive aparte porque graphrag-sdk fuerza `transformers<5.2.0`/`typer<0.26`, incompatibles con Docling y con el backend.
+- **Redis**: self-hosted en Fly (sesiones MO + APScheduler).
 - **Vercel**: frontend (las 4 UIs).
+
+Clientes en el backend: `app/graph/dkg_client.py` (fachada DKG multi-tenant,
+cliente `falkordb`) y `app/embeddings/bge_client.py` (cliente HTTP puro al
+embedder). `graphrag-sdk`/`litellm` NO van a la imagen del backend (viven en el
+worker B2); el backend solo usa el cliente `falkordb` (ligero).
 
 ### WhatsApp
 - **360dialog directo** (BSP único, sin Twilio). Decisión #8.

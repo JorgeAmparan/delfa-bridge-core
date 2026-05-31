@@ -4,6 +4,7 @@ import os
 from datetime import datetime, timezone
 
 import langextract as lx
+from deprecated import deprecated
 from docling.document_converter import DocumentConverter
 from dotenv import load_dotenv
 from google import genai
@@ -46,7 +47,24 @@ def clasificar_documento(texto: str, source_type: str) -> dict:
 
 # ─── DII — DIGEST INPUT INTELLIGENCE ─────────────────────────────────────────
 
+@deprecated(
+    reason=(
+        "DII reemplazado por GraphRAG-SDK (Adenda §2). Conservado temporalmente "
+        "para callers existentes (documents.py) y B5 (Ingesta Bilingüe); se "
+        "elimina cuando B5 cierre. NO usar para código nuevo: el pipeline de "
+        "ingesta nuevo vive en app/graph/."
+    ),
+    version="B1",
+)
 class DigestInputIntelligence:
+    """
+    ⚠️  DEPRECATED — DII reemplazado por GraphRAG-SDK (Adenda §2).
+
+    Este módulo se conserva temporalmente para callers existentes en
+    documents.py y B5 (Ingesta Bilingüe). Se elimina cuando B5 cierre.
+    NO usar para código nuevo. Pipeline de ingesta nuevo: ver app/graph/.
+    """
+
     def __init__(self, org_id: str = None):
         self.data_path = os.getenv("DATA_DIR", "./data")
         self.org_id = org_id or os.getenv("ORG_ID", "default")

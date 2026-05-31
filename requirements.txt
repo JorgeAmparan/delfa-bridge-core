@@ -24,9 +24,15 @@ PyJWT==2.12.1
 supabase==2.28.3
 
 # --- post-PoC: arquitectura de ingesta (B1+) ---
-graphrag-sdk          # FalkorDB GraphRAG-SDK 1.1.1 — reemplaza DII. Pin en B1.
-litellm               # LLM-agnóstico (prefijo gemini/ obligatorio). Pin en B1.
-apscheduler           # Scheduler backend Redis (decisión #3). Pin en B1.
+# Pin B1 (resolver real `pip install --dry-run graphrag-sdk==1.1.1`):
+# arrastra falkordb 1.6.1, gliner 0.2.26, hnswlib 0.8.0, onnxruntime 1.26.0,
+# sentencepiece, y FUERZA transformers<5.2.0 + typer<0.26 → incompatible con
+# Docling en el MISMO entorno (ver requirements.docker.txt y reporte B1 §9.2).
+# Por eso graphrag-sdk + litellm NO van a la imagen del backend: viven en el
+# worker de ingesta `docyan-lde-ingest` (B2). El backend solo usa `falkordb`.
+graphrag-sdk==1.1.1   # FalkorDB GraphRAG-SDK — reemplaza DII.
+litellm==1.86.2       # LLM-agnóstico (prefijo gemini/ obligatorio) = versión smoke test GEMINI.
+apscheduler           # Scheduler backend Redis (decisión #3). Pin en B3 (no instalado aún).
 
 # LLM providers
 anthropic==0.87.0
@@ -83,6 +89,7 @@ beautifulsoup4==4.14.3
 Jinja2==3.1.6
 tenacity==9.1.4              # retry rate limiting Gemini
 email-validator==2.2.0
+Deprecated==1.3.1            # @deprecated en DII (B1 §10) — dii.py es import perezoso (worker/dev)
 
 # ============================================================
 # Binarios externos (B5) — instalar vía apt/git en Dockerfile,

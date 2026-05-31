@@ -26,6 +26,18 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
+      # FalkorDB para los tests de integración del DKG (B1 §3.4 / §13).
+      # Mismo pin por digest que fly.graph.toml (módulo graph v4.18.0).
+      falkordb:
+        image: falkordb/falkordb@sha256:58a95a33d591b25648bbb13268a23329aa39e70b4cbeff0752c65f8b4beba6db
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
     env:
       JWT_SECRET: ci-test-secret-min-32-bytes-long-000000000
       ALLOWED_ORIGINS: http://localhost:3000
