@@ -41,4 +41,4 @@ primary_region = "dfw"
 # Redis es ligero (tier alfa). shared-cpu-1x / 256 MB.
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "256mb"
+  memory = "512mb"
