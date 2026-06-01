@@ -120,11 +120,22 @@ Secrets del worker: `GEMINI_API_KEY` (NO `GOOGLE_API_KEY`), `OPENAI_API_KEY`,
 `fly.toml`: `docyan-lde-ingest`, región `dfw`, `shared-cpu-4x` / 4 GB, **sin
 volumen** (stateless), servicio HTTP **privado** (flycast, solo `/health`).
 
+**Build context = RAÍZ del repo** (el Dockerfile hace `COPY app/` y `COPY worker/`).
+Por eso se despliega DESDE LA RAÍZ con `--config worker/fly.toml`, y
+`[build].dockerfile` en el toml es `"Dockerfile"` (flyctl lo resuelve relativo al
+dir del `--config`, worker/ → worker/Dockerfile). Verificado empíricamente (B2.2):
+context=raíz → `COPY app`/`COPY worker` resuelven; context=worker/ → `COPY app`
+falla con `"/app": not found`. NO hacer `cd worker`. Pasos detallados y verificación:
+[`runbook_deploy_worker.md`](runbook_deploy_worker.md). Preflight: `scripts/preflight_worker.py`.
+
 ```bash
 flyctl apps create docyan-lde-ingest
-flyctl deploy --app docyan-lde-ingest --dockerfile worker/Dockerfile   # desde la raíz
+# DESDE LA RAÍZ del repo (context = raíz):
+flyctl deploy --app docyan-lde-ingest --config worker/fly.toml
 flyctl secrets set GEMINI_API_KEY=... OPENAI_API_KEY=... \
   FALKOR_HOST=docyan-lde-graph.internal FALKOR_PORT=6379 \
   EMBEDDER_URL=http://docyan-lde-embedder.internal:8000 \
-  REDIS_QUEUE_URL=... --app docyan-lde-ingest
+  REDIS_QUEUE_URL=redis://docyan-lde-redis.internal:6379/0 \
+  SUPABASE_URL=... SUPABASE_SERVICE_KEY=... INGEST_STORAGE_BUCKET=ingest-tmp \
+  --app docyan-lde-ingest
 ```

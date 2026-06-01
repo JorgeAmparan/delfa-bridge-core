@@ -3,13 +3,19 @@
 # LiteLLM + PyTorch CPU) aislado del backend de consultas. Stateless (sin volumen):
 # el documento llega por referencia (document store) y el resultado va al grafo.
 #
-# Deploy desde la raíz del repo (el Dockerfile copia app/ y worker/):
-#   flyctl deploy --app docyan-lde-ingest --dockerfile worker/Dockerfile
+# Deploy DESDE LA RAÍZ del repo (el Dockerfile hace COPY app/ y COPY worker/, que
+# requieren build context = raíz). Verificado empíricamente (B2.2):
+#   flyctl deploy --app docyan-lde-ingest --config worker/fly.toml
+# Con --config worker/fly.toml desde la raíz: context = cwd = raíz (COPY app/worker
+# resuelven) y flyctl resuelve [build].dockerfile RELATIVO al dir del --config
+# (worker/), por lo que la ruta correcta es "Dockerfile" → worker/Dockerfile.
+# (Es el mismo aprendizaje de B2.1, pero inverso a redis: redis deploya desde su
+# subdir; el worker deploya desde la raíz porque copia app/ y worker/.)
 app = "docyan-lde-ingest"
 primary_region = "dfw"
 
 [build]
-  dockerfile = "worker/Dockerfile"
+  dockerfile = "Dockerfile"
 
 [env]
   # Endpoints internos (los SECRETS reales — API keys — se fijan con flyctl secrets).
