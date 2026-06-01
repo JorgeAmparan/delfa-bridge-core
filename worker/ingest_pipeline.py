@@ -46,10 +46,33 @@ def convertir_a_markdown(path: str) -> str:
     Convierte un documento (PDF/docx/xlsx/pptx/imagen/...) a Markdown con Docling,
     preservando tablas complejas (TableFormer) y aplicando OCR cuando hace falta.
     GraphRAG-SDK ingiere Markdown nativamente.
-    """
-    from docling.document_converter import DocumentConverter
 
-    converter = DocumentConverter()
+    Pipeline OFFLINE (HF_HUB_OFFLINE en la imagen del worker): usa los modelos
+    layout + TableFormer precargados en build y OCR vía el binario `tesseract`
+    (apt, sin modelo HF) — así convert() no requiere red. Para formatos no-PDF,
+    Docling usa su pipeline por defecto.
+    """
+    from docling.datamodel.base_models import InputFormat
+    from docling.datamodel.pipeline_options import (
+        PdfPipelineOptions,
+        TesseractCliOcrOptions,
+    )
+    from docling.document_converter import DocumentConverter, PdfFormatOption
+
+    pdf_opts = PdfPipelineOptions()
+    pdf_opts.do_table_structure = True  # TableFormer (tablas complejas, núcleo PoC)
+    pdf_opts.ocr_options = TesseractCliOcrOptions()  # OCR con el tesseract de apt
+    # artifacts_path: directorio donde `docling-tools models download` dejó los
+    # modelos en build (layout + tableformer). Sin esto, convert() intenta
+    # snapshot_download desde HF y con HF_HUB_OFFLINE=1 falla con
+    # LocalEntryNotFoundError (verificado offline en B2.2). Apuntarlo a la ruta del
+    # prefetch hace que convert() corra 100% sin red.
+    artifacts = os.getenv("DOCLING_ARTIFACTS_PATH")
+    if artifacts and os.path.isdir(artifacts):
+        pdf_opts.artifacts_path = artifacts
+    converter = DocumentConverter(
+        format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_opts)}
+    )
     result = converter.convert(path)
     return result.document.export_to_markdown()
 
@@ -58,20 +81,29 @@ def convertir_a_markdown(path: str) -> str:
 
 
 def _build_graphrag(tenant_id: str, document_schema):
-    """Construye un GraphRAG apuntando al grafo aislado del tenant."""
-    from graphrag_sdk import ConnectionConfig, GraphRAG
+    """
+    Construye un GraphRAG apuntando al grafo aislado del tenant.
+
+    Wiring validado en el PoC (poc_v111_gemini_flash.py): el `llm` base del
+    GraphRAG es el de QA (gpt-4o-mini); el de EXTRACCIÓN (Gemini 2.5 Flash) NO va
+    aquí sino en el `extractor` de `ingest()` (ver procesar()). El embedder es
+    BGE-M3 (decisión #1; el PoC usó OpenAI 1536 "por simplicidad", no invalida).
+    """
+    from graphrag_sdk import ConnectionConfig, FalkorDBConnection, GraphRAG
 
     from app.graph.embedder_adapter import BGE_M3_DIMENSION, make_bge_m3_adapter
 
     embedder = make_bge_m3_adapter()
-    connection = ConnectionConfig(
-        host=FALKOR_HOST,
-        port=FALKOR_PORT,
-        graph_name=graph_name_for(tenant_id),  # multi-tenancy absoluta
+    connection = FalkorDBConnection(
+        config=ConnectionConfig(
+            host=FALKOR_HOST,
+            port=FALKOR_PORT,
+            graph_name=graph_name_for(tenant_id),  # multi-tenancy absoluta
+        )
     )
     return GraphRAG(
         connection=connection,
-        llm=llm_config.build_extraction_llm(),
+        llm=llm_config.build_qa_llm(),  # base = QA (gpt-4o-mini), como el PoC
         embedder=embedder,
         schema=document_schema.to_sdk_schema() if document_schema else None,
         embedding_dimension=BGE_M3_DIMENSION,  # 1024 (BGE-M3), no 256/1536
@@ -135,18 +167,27 @@ class IngestPipeline:
 
         graphrag = _build_graphrag(job.tenant_id, schema)
         try:
-            # 1. Extracción al grafo del tenant (provenance nativo).
-            await graphrag.ingest(text=markdown, document_id=job.job_id)
+            # 1. Extracción al grafo del tenant (provenance nativo). Wiring del PoC:
+            #    extractor = Gemini 2.5 Flash; resolver = LLMVerifiedResolution con
+            #    Gemini + el embedder BGE-M3. Sin pasarlos, el SDK usaría defaults.
+            extractor, resolver = llm_config.build_extractor_and_resolver(
+                graphrag.embedder
+            )
+            ingest_result = await graphrag.ingest(
+                text=markdown,
+                document_id=job.job_id,
+                extractor=extractor,
+                resolver=resolver,
+            )
 
-            # 2. Deduplicación fuzzy — BUG PoC #1: con await (es async, sin _sync).
+            # 2. Deduplicación fuzzy — BUG PoC #1: el PoC NO la llamó (653 residuos).
+            #    Es async y NO tiene variante _sync → con await.
             duplicados_resueltos = 0
             if llm_config.LLM_CONFIG["deduplicate_fuzzy"]:
                 duplicados_resueltos = await graphrag.deduplicate_entities(fuzzy=True)
 
             # 3. Finalize (async; también existe finalize_sync para contextos sync).
             await graphrag.finalize()
-
-            stats = await graphrag.get_statistics()
         finally:
             graphrag.close()
 
@@ -157,9 +198,13 @@ class IngestPipeline:
             except Exception:  # noqa: BLE001 — el conteo de uso no debe tumbar la ingesta
                 logger.warning("no se pudo marcar uso del schema %s", schema.tipo_documento)
 
+        # Campos del IngestionResult del SDK (como reporta el PoC).
         return {
             "tipo_documento": schema.tipo_documento if schema else None,
             "document_id": job.job_id,
+            "nodos_creados": getattr(ingest_result, "nodes_created", None),
+            "relaciones_creadas": getattr(ingest_result, "relationships_created", None),
+            "chunks_indexados": getattr(ingest_result, "chunks_indexed", None),
             "duplicados_resueltos": duplicados_resueltos,
-            "estadisticas_grafo": stats,
+            "metadata": getattr(ingest_result, "metadata", {}),
         }

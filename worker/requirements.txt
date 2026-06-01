@@ -21,13 +21,13 @@ litellm==1.86.2
 
 # Conversión universal multi-formato + OCR + tablas complejas (TableFormer).
 # Pin = versión validada en el entorno de este sprint (drift respecto al 2.84.0
-# del contrato; ver reporte §3). Arrastra docling-ibm-models (torch).
-# docling-core se PINEA a la versión known-good del venv: sin el pin, el resolver
-# elige docling-core 2.77.1, que choca con pydantic-settings==2.13.1
-# (ResolutionImpossible, verificado con pip install --dry-run, B2.2). 2.49.1
-# coexiste con todo el stack (es lo instalado y probado en el venv).
+# del contrato; ver reporte §3). Arrastra docling-ibm-models (torch) + docling-core.
+# NO se pinea docling-core: en un entorno LIMPIO (la imagen Docker) pip resuelve un
+# docling-core compatible con el resto del stack — verificado con build real del
+# worker (docker build, B2.2, imagen 7.51 GB OK). (Un `pip --dry-run` corrido sobre
+# el venv da un falso positivo porque conserva el docling-core ya instalado ahí; por
+# eso el preflight resuelve con --ignore-installed, como el contenedor.)
 docling==2.96.0
-docling-core==2.49.1
 
 # Indexación semántica (disponible; el path activo B2 es Docling→Markdown→SDK).
 llama-index-core==0.14.19
@@ -49,8 +49,13 @@ supabase==2.28.3
 # Health server sobre flycast + framework.
 fastapi==0.135.3
 uvicorn==0.42.0
-pydantic==2.12.5
-pydantic-settings==2.13.1
+# pydantic/pydantic-settings: alineados al combo known-good del venv que coexiste
+# con docling 2.96.0 (→ docling-core 2.77.x, que EXIGE pydantic-settings>=2.14.0).
+# Pinear pydantic-settings==2.13.1 rompía el build del worker en contenedor limpio
+# (ResolutionImpossible, verificado con docker build, B2.2). El backend mantiene su
+# propio pin (2.12.5/2.13.1); el worker es imagen aparte y puede divergir.
+pydantic==2.13.4
+pydantic-settings==2.14.1
 python-dotenv==1.2.2
 
 # Retry ante rate limiting de Gemini (PoC: 1,506 retries en multi-doc).

@@ -24,6 +24,9 @@ primary_region = "dfw"
   EMBEDDER_URL = "http://docyan-lde-embedder.internal:8000"
   HF_HUB_OFFLINE = "1"
   TRANSFORMERS_OFFLINE = "1"
+  # Modelos Docling precargados en build (docling-tools models download); el
+  # pipeline los usa como artifacts_path para convertir offline (B2.2).
+  DOCLING_ARTIFACTS_PATH = "/root/.cache/docling/models"
 
 # Servicio HTTP PRIVADO (flycast / .internal). SIN handlers públicos: el worker
 # recibe jobs por la cola Redis y sirve /health a la red privada de Fly.

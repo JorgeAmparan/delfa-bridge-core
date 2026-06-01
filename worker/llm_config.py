@@ -65,3 +65,21 @@ def build_resolution(embedder=None):
     _require_env("GEMINI_API_KEY")
     llm = LiteLLM(model=LLM_CONFIG["resolution_model"], temperature=0.0)
     return LLMVerifiedResolution(llm=llm, embedder=embedder)
+
+
+def build_extractor_and_resolver(embedder=None):
+    """
+    Construye (extractor, resolver) para `GraphRAG.ingest()`, con el wiring exacto
+    validado en el PoC (poc_v111_gemini_flash.py):
+      extractor = GraphExtraction(llm = Gemini 2.5 Flash)
+      resolver  = LLMVerifiedResolution(llm = Gemini 2.5 Flash, embedder = BGE-M3)
+    Pasarlos explícitamente a ingest() evita que el SDK use estrategias por defecto
+    (que no garantizan extracción con Gemini ni resolución verificada por LLM).
+    """
+    from graphrag_sdk import GraphExtraction, LiteLLM, LLMVerifiedResolution
+
+    _require_env("GEMINI_API_KEY")
+    llm_extraction = LiteLLM(model=LLM_CONFIG["extraction_model"], temperature=0.0)
+    extractor = GraphExtraction(llm=llm_extraction)
+    resolver = LLMVerifiedResolution(llm=llm_extraction, embedder=embedder)
+    return extractor, resolver

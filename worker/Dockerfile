@@ -25,11 +25,27 @@ RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu 
     "torch==2.8.0" "torchvision==0.23.0"
 
 # 2) Resto del stack del worker (torch ya satisfecho → no se re-resuelve a CUDA).
+#    build-essential se instala SOLO para compilar paquetes sin wheel (hnswlib, dep
+#    de graphrag-sdk, necesita g++ con C++11) y se PURGA en la MISMA capa, así no
+#    infla la imagen final (importante por el margen al límite de unpack de Fly).
+#    Verificado: sin compilador el build falla con "Unsupported compiler" (B2.2).
 COPY worker/requirements.txt /srv/worker/requirements.txt
-RUN pip install --no-cache-dir -r /srv/worker/requirements.txt
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential \
+    && pip install --no-cache-dir -r /srv/worker/requirements.txt \
+    && apt-get purge -y build-essential && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
 
-# 3) Precarga de modelos de layout/tabla de Docling EN BUILD (arranque sin red).
-RUN python -c "from docling.document_converter import DocumentConverter; DocumentConverter()" || true
+# 3) Precarga de modelos de Docling EN BUILD (arranque sin red, HF_HUB_OFFLINE).
+#    SOLO layout + tableformer (núcleo para PDF con tablas del mercado alfa); NO los
+#    VLM pesados (smoldocling/granite) ni easyocr — el OCR lo hace el binario
+#    tesseract (apt), configurado en worker/ingest_pipeline.py. Verificado (B2.2):
+#    `DocumentConverter()` NO descargaba nada (preload anterior era no-op); este
+#    comando sí deja los modelos en la imagen para que convert() funcione offline.
+RUN docling-tools models download layout tableformer
+# Ruta donde quedaron los modelos; el pipeline la pasa como artifacts_path para que
+# convert() los use offline (sin esto, convert() intenta snapshot_download desde HF
+# y con HF_HUB_OFFLINE=1 falla — verificado en B2.2).
+ENV DOCLING_ARTIFACTS_PATH=/root/.cache/docling/models
 
 # Código: el worker importa el paquete `app` (embedder_adapter, dkg_ontology,
 # schemas_documentales, jobs) y `worker`.
