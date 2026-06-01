@@ -6,8 +6,8 @@
 # separados (cada componente escala/respalda independiente).
 #
 # Deploy (PENDIENTE DE JORGE — ver redis/README.md). DESDE redis/ (no la raíz),
-# para que el build context sea redis/ y el .dockerignore de la raíz (que excluye
-# todo salvo el backend) NO aplique — verificado empíricamente (B2.1 2/2):
+# para que el build context sea redis/ y `COPY redis.conf` resuelva (desde la raíz
+# el context no contiene redis.conf) — verificado empíricamente (B2.1 2/2):
 #   flyctl apps create docyan-lde-redis
 #   flyctl volumes create redis_data --region dfw --size 5 --app docyan-lde-redis
 #   cd redis && flyctl deploy --app docyan-lde-redis
@@ -16,8 +16,9 @@ app = "docyan-lde-redis"
 primary_region = "dfw"
 
 # Deploy DESDE redis/ → context = redis/, config = ./fly.toml (auto-detectado),
-# dockerfile = ./Dockerfile. Así `COPY redis.conf` del Dockerfile resuelve y el
-# .dockerignore de la raíz no recorta el context. NO desplegar desde la raíz.
+# dockerfile = ./Dockerfile. Así `COPY redis.conf` resuelve. NO desplegar desde la
+# raíz (ahí el context no contiene redis.conf). El .dockerignore de la raíz no es
+# la causa (solo excluye venv/.env/__pycache__/*.pyc/.DS_Store/data/.git/*.log).
 [build]
   dockerfile = "Dockerfile"
 

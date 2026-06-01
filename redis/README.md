@@ -32,12 +32,14 @@ independiente). `REDIS_QUEUE_URL` y `REDIS_URL` pueden apuntar a esta misma app
 ## Operación / deploy (PENDIENTE DE JORGE)
 
 El deploy se hace **desde `redis/`** (no desde la raíz). Motivo verificado
-empíricamente (B2.1 2/2): el `.dockerignore` de la raíz excluye todo salvo el
-backend (`*` + `!app` …), así que con context = raíz el directorio `redis/` no
-entra al context (deploy mostraba `context: 2B` y `COPY redis.conf` fallaba con
-`"/redis.conf": not found`). Desplegando desde `redis/`, el build context es
-`redis/` y `COPY redis.conf` resuelve (build local exitoso, imagen ~30–40 MB
-sobre `redis:7-alpine`).
+empíricamente (B2.1 2/2): con `flyctl deploy --config redis/fly.toml` desde la
+raíz, el build context queda en la **raíz**, donde no existe `redis.conf` (está en
+`redis/redis.conf`), así que `COPY redis.conf` falla con `"/redis.conf": not
+found`. Desplegando desde `redis/`, el build context es `redis/` y `COPY
+redis.conf` resuelve (build local exitoso, imagen ~30–40 MB sobre
+`redis:7-alpine`). **Aclaración:** el `.dockerignore` de la raíz NO es la causa —
+solo excluye `venv/ .env __pycache__/ *.pyc .DS_Store data/ .git/ *.log`, no
+recorta `redis/`.
 
 ```bash
 flyctl apps create docyan-lde-redis

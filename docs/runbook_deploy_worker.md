@@ -130,7 +130,12 @@ flyctl deploy --app docyan-lde-ingest --config worker/fly.toml
 ```
 - **Esperar:** el build instala PyTorch CPU + Docling + GraphRAG-SDK (varios
   minutos la 1ª vez), precarga modelos Docling, y termina con
-  `successfully deployed` / una máquina `started`.
+  `successfully deployed` / una máquina `started`. **Tamaño de imagen medido en
+  build local: ~7.5 GB** (es el worker, no el backend de 243 MB). Margen al límite
+  de unpack de Fly (~8 GB) es delgado (~0.5 GB).
+- **Si falla por TAMAÑO (>8 GB unpack):** aplica la mitigación de menor riesgo —
+  quita `llama-index-core` de `worker/requirements.txt` (no se usa en el path
+  activo) y reconstruye. Ver `docs/worker_architecture.md` §Tamaño de imagen.
 - **Si falla en `COPY app` (`"/app": not found`):** estás deployando con el
   context equivocado. Asegúrate de ejecutar el comando **desde la raíz** y con
   `--config worker/fly.toml` (no `cd worker`).

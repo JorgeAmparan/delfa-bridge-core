@@ -22,7 +22,12 @@ litellm==1.86.2
 # Conversión universal multi-formato + OCR + tablas complejas (TableFormer).
 # Pin = versión validada en el entorno de este sprint (drift respecto al 2.84.0
 # del contrato; ver reporte §3). Arrastra docling-ibm-models (torch).
+# docling-core se PINEA a la versión known-good del venv: sin el pin, el resolver
+# elige docling-core 2.77.1, que choca con pydantic-settings==2.13.1
+# (ResolutionImpossible, verificado con pip install --dry-run, B2.2). 2.49.1
+# coexiste con todo el stack (es lo instalado y probado en el venv).
 docling==2.96.0
+docling-core==2.49.1
 
 # Indexación semántica (disponible; el path activo B2 es Docling→Markdown→SDK).
 llama-index-core==0.14.19

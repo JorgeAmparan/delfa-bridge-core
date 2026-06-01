@@ -30,6 +30,12 @@ import tomllib
 REPO = pathlib.Path(__file__).resolve().parent.parent
 WORKER = REPO / "worker"
 
+# El paquete `worker` (y `app`) viven en la raíz del repo; al ejecutar el script
+# por ruta (python scripts/preflight_worker.py) sys.path[0] es scripts/, no la
+# raíz. Lo insertamos para que el chequeo [1] de imports funcione.
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
+
 # Env vars que el worker espera (Sprint B2 §4.3 / B2.2 §1).
 WORKER_ENV_VARS = [
     "GEMINI_API_KEY",
