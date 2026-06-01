@@ -3,6 +3,8 @@ import os
 from dotenv import load_dotenv
 from supabase import Client, create_client
 
+from app.core.supabase_client import require_supabase_config
+
 load_dotenv()
 
 
@@ -38,10 +40,8 @@ class TraceabilityMatrix:
 
     def __init__(self, org_id: str = None):
         self.org_id = org_id or os.getenv("ORG_ID", "default")
-        self.supabase: Client = create_client(
-            os.getenv("SUPABASE_URL"),
-            os.getenv("SUPABASE_KEY")
-        )
+        _url, _key = require_supabase_config("matrix")
+        self.supabase: Client = create_client(_url, _key)
 
     # ── Log principal ────────────────────────────────────────────────────────
 

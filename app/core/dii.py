@@ -14,6 +14,7 @@ from supabase import Client, create_client
 from app.core.intent import DocumentIntentAnalyzer
 from app.core.matrix import TraceabilityMatrix
 from app.core.mr import model_router
+from app.core.supabase_client import require_supabase_config
 
 load_dotenv()
 
@@ -74,10 +75,8 @@ class DigestInputIntelligence:
         if not os.getenv("LANGEXTRACT_API_KEY") and _gemini_key:
             os.environ["LANGEXTRACT_API_KEY"] = _gemini_key
 
-        self.supabase: Client = create_client(
-            os.getenv("SUPABASE_URL"),
-            os.getenv("SUPABASE_KEY")
-        )
+        _url, _key = require_supabase_config("DII")
+        self.supabase: Client = create_client(_url, _key)
         self.converter = DocumentConverter()
         self.intent_analyzer = DocumentIntentAnalyzer()
         self.tm = TraceabilityMatrix(org_id=self.org_id)

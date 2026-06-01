@@ -196,10 +196,10 @@ async def _activar_suscripcion(session: dict):
 
     # Guardar en Supabase
     from supabase import create_client
-    supabase = create_client(
-        os.getenv("SUPABASE_URL"),
-        os.getenv("SUPABASE_KEY")
-    )
+
+    from app.core.supabase_client import require_supabase_config
+    _url, _key = require_supabase_config("billing")
+    supabase = create_client(_url, _key)
 
     # Crear tabla api_keys si no existe — o insertar
     try:
@@ -223,10 +223,10 @@ async def _cancelar_suscripcion(subscription: dict):
     customer_id = subscription.get("customer")
 
     from supabase import create_client
-    supabase = create_client(
-        os.getenv("SUPABASE_URL"),
-        os.getenv("SUPABASE_KEY")
-    )
+
+    from app.core.supabase_client import require_supabase_config
+    _url, _key = require_supabase_config("billing")
+    supabase = create_client(_url, _key)
 
     try:
         supabase.table("api_keys").update({

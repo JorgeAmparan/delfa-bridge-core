@@ -8,6 +8,13 @@ primary_region = "dfw"
   PYTHONPATH = "/app"
   DATA_DIR = "/app/data"
   PORT = "8000"
+  # Endpoints internos NO sensibles (lugar canónico = [env], igual que worker/fly.toml).
+  # Los SECRETS reales (Supabase, API keys, JWT) se fijan con `flyctl secrets set`
+  # — ver docs/runbook_secrets_produccion.md. NO poner secrets aquí.
+  FALKOR_HOST = "docyan-lde-graph.internal"
+  FALKOR_PORT = "6379"
+  EMBEDDER_URL = "http://docyan-lde-embedder.internal:8000"
+  BGE_M3_TIMEOUT = "30"
 
 [http_service]
   internal_port = 8000

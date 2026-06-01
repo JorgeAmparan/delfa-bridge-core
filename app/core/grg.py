@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from supabase import Client, create_client
 
 from app.core.matrix import TraceabilityMatrix
+from app.core.supabase_client import require_supabase_config
 
 load_dotenv()
 
@@ -18,10 +19,8 @@ class GovernanceGuardrails:
 
     def __init__(self, org_id: str = None):
         self.org_id = org_id or os.getenv("ORG_ID", "default")
-        self.supabase: Client = create_client(
-            os.getenv("SUPABASE_URL"),
-            os.getenv("SUPABASE_KEY")
-        )
+        _url, _key = require_supabase_config("GRG")
+        self.supabase: Client = create_client(_url, _key)
         self._reglas_cache = None
         self._cache_timestamp = 0
         self.tm = TraceabilityMatrix(org_id=self.org_id)

@@ -9,6 +9,7 @@ from supabase import create_client
 from app.api.auth import requiere_rol
 from app.core.grg import GovernanceGuardrails
 from app.core.matrix import TraceabilityMatrix
+from app.core.supabase_client import require_supabase_config
 
 load_dotenv()
 
@@ -52,10 +53,8 @@ async def procesar_documento(
         # GRG si aplica
         resumen_grg = {}
         if aplicar_grg:
-            supabase = create_client(
-                os.getenv("SUPABASE_URL"),
-                os.getenv("SUPABASE_KEY")
-            )
+            _url, _key = require_supabase_config("documents")
+            supabase = create_client(_url, _key)
             doc = supabase.table("documents").select("id").eq(
                 "org_id", org_id
             ).eq("name", file.filename).order(
@@ -90,10 +89,8 @@ async def listar_documentos(
     ctx: dict = Depends(requiere_rol("admin", "editor", "viewer"))
 ):
     """Lista todos los documentos de la organización."""
-    supabase = create_client(
-        os.getenv("SUPABASE_URL"),
-        os.getenv("SUPABASE_KEY")
-    )
+    _url, _key = require_supabase_config("documents")
+    supabase = create_client(_url, _key)
     resultado = supabase.table("documents").select(
         "id, name, source_type, status, processed_at, created_at, metadata",
         count="exact"
@@ -115,10 +112,8 @@ async def detalle_documento(
     ctx: dict = Depends(requiere_rol("admin", "editor", "viewer"))
 ):
     """Detalle de un documento con sus entidades."""
-    supabase = create_client(
-        os.getenv("SUPABASE_URL"),
-        os.getenv("SUPABASE_KEY")
-    )
+    _url, _key = require_supabase_config("documents")
+    supabase = create_client(_url, _key)
 
     doc = supabase.table("documents").select("*").eq(
         "id", document_id
@@ -146,10 +141,8 @@ async def eliminar_documento(
     ctx: dict = Depends(requiere_rol("admin"))
 ):
     """Elimina un documento y todos sus registros asociados (cascade)."""
-    supabase = create_client(
-        os.getenv("SUPABASE_URL"),
-        os.getenv("SUPABASE_KEY")
-    )
+    _url, _key = require_supabase_config("documents")
+    supabase = create_client(_url, _key)
     org_id = ctx["org_id"]
 
     doc = supabase.table("documents").select("id, name").eq(

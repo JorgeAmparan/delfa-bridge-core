@@ -41,16 +41,14 @@ async def crear_regla(
 @router.get("/rules")
 async def listar_reglas(ctx: dict = Depends(requiere_rol("admin", "editor", "viewer"))):
     """Lista todas las reglas activas de la organización."""
-    import os
-
     from dotenv import load_dotenv
     from supabase import create_client
+
+    from app.core.supabase_client import require_supabase_config
     load_dotenv()
 
-    supabase = create_client(
-        os.getenv("SUPABASE_URL"),
-        os.getenv("SUPABASE_KEY")
-    )
+    _url, _key = require_supabase_config("governance")
+    supabase = create_client(_url, _key)
 
     resultado = supabase.table("governance_rules").select("*").eq(
         "org_id", ctx["org_id"]

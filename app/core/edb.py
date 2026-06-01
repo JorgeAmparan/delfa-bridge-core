@@ -5,6 +5,7 @@ from supabase import Client, create_client
 
 from app.core.intent import QueryIntentAnalyzer
 from app.core.matrix import TraceabilityMatrix
+from app.core.supabase_client import require_supabase_config
 from app.embeddings.bge_client import BGE_M3_DIMS, bge_client
 
 load_dotenv()
@@ -18,10 +19,8 @@ class EntityDataBrain:
 
     def __init__(self, org_id: str = None):
         self.org_id = org_id or os.getenv("ORG_ID", "default")
-        self.supabase: Client = create_client(
-            os.getenv("SUPABASE_URL"),
-            os.getenv("SUPABASE_KEY")
-        )
+        _url, _key = require_supabase_config("EDB")
+        self.supabase: Client = create_client(_url, _key)
         self.embedder = bge_client
         self.embedding_dims = BGE_M3_DIMS
         self.query_analyzer = QueryIntentAnalyzer()

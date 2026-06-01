@@ -156,10 +156,10 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 
     elif name == "list_documents":
         from supabase import create_client
-        supabase = create_client(
-            os.getenv("SUPABASE_URL"),
-            os.getenv("SUPABASE_KEY")
-        )
+
+        from app.core.supabase_client import require_supabase_config
+        _url, _key = require_supabase_config("mcp_server")
+        supabase = create_client(_url, _key)
 
         resultado = supabase.table("documents").select(
             "id, name, source_type, status, processed_at"

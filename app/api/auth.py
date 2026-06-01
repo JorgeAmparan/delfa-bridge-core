@@ -11,6 +11,8 @@ from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBea
 from pydantic import BaseModel, EmailStr
 from supabase import Client, create_client
 
+from app.core.supabase_client import require_supabase_config
+
 load_dotenv()
 
 # ── Config ───────────────────────────────────────────────────────────────────
@@ -35,7 +37,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 def _supabase() -> Client:
     """Cliente Supabase con service_role key — bypasea RLS para operaciones de auth."""
-    return create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
+    url, key = require_supabase_config("auth", service=True)
+    return create_client(url, key)
 
 
 def _hash_token(token: str) -> str:
