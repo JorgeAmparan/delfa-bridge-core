@@ -197,8 +197,11 @@ async def _activar_suscripcion(session: dict):
     # Guardar en Supabase
     from supabase import create_client
 
-    from app.core.supabase_client import require_supabase_config
-    _url, _key = require_supabase_config("billing")
+    # FUERA DE ALCANCE MVP (Adenda 31-may-2026): Stripe se difiere a 3-5 clientes
+    # (decisión Paso C #13). Falla loud sin DOCYAN_ENABLE_BILLING=1.
+    from app.core.supabase_client import require_module_enabled, require_supabase_config
+    require_module_enabled("billing")
+    _url, _key = require_supabase_config("billing", service=True)
     supabase = create_client(_url, _key)
 
     # Crear tabla api_keys si no existe — o insertar
@@ -224,8 +227,11 @@ async def _cancelar_suscripcion(subscription: dict):
 
     from supabase import create_client
 
-    from app.core.supabase_client import require_supabase_config
-    _url, _key = require_supabase_config("billing")
+    # FUERA DE ALCANCE MVP (Adenda 31-may-2026): Stripe se difiere a 3-5 clientes
+    # (decisión Paso C #13). Falla loud sin DOCYAN_ENABLE_BILLING=1.
+    from app.core.supabase_client import require_module_enabled, require_supabase_config
+    require_module_enabled("billing")
+    _url, _key = require_supabase_config("billing", service=True)
     supabase = create_client(_url, _key)
 
     try:

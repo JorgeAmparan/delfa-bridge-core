@@ -44,10 +44,13 @@ async def listar_reglas(ctx: dict = Depends(requiere_rol("admin", "editor", "vie
     from dotenv import load_dotenv
     from supabase import create_client
 
-    from app.core.supabase_client import require_supabase_config
+    # FUERA DE ALCANCE MVP (Adenda 31-may-2026): rutas de UI #3 PM (diferida).
+    # Falla loud sin DOCYAN_ENABLE_GOVERNANCE=1.
+    from app.core.supabase_client import require_module_enabled, require_supabase_config
     load_dotenv()
 
-    _url, _key = require_supabase_config("governance")
+    require_module_enabled("governance")
+    _url, _key = require_supabase_config("governance", service=True)
     supabase = create_client(_url, _key)
 
     resultado = supabase.table("governance_rules").select("*").eq(

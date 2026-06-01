@@ -31,27 +31,33 @@ flyctl secrets list --app docyan-lde-ingest   # estado actual del worker
 
 ## 1. Backend — `docyan-lde-api`
 
-### 1.1. Secrets FALTANTES (los 3 críticos)
+### 1.1. Secrets FALTANTES (los 2 de Supabase)
+
+> **B0.7 (Adenda MVP, 31-may-2026):** el backend usa **SOLO `service_role`**. La
+> anon key (`SUPABASE_KEY`) fue **eliminada del stack** — ya no se setea. El
+> aislamiento multi-tenant es a nivel de query (Doc 09) y la integridad del FAT
+> la da el hash chain SHA-256 (Doc 08), no las RLS. Por eso son **2 secrets, no 3**.
 
 Estado actual: la app tiene 11 secrets (`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`,
 `JWT_SECRET`, `OPENAI_API_KEY`, `ALLOWED_ORIGINS`, `EMBEDDER_URL`, `FALKOR_HOST`,
 `FALKOR_PORT`, `BGE_M3_TIMEOUT`, `REDIS_QUEUE_URL`, `REDIS_URL`) y **ninguno de
-Supabase**. Faltan exactamente estos tres:
+Supabase**. Faltan exactamente estos dos:
 
 | Secret | Fuente del valor |
 |---|---|
 | `SUPABASE_URL` | Supabase Dashboard → tu proyecto → **Project Settings → API** → *Project URL* (`https://<ref>.supabase.co`). |
-| `SUPABASE_KEY` | Mismo panel → *Project API keys* → **`anon` / `public`**. Es la key con RLS aplicado (la usan edb, grg, matrix, documents, governance, billing, mcp_server). |
-| `SUPABASE_SERVICE_KEY` | Mismo panel → *Project API keys* → **`service_role`** (⚠️ secreta, bypassa RLS; solo la usa `auth.py`). |
+| `SUPABASE_SERVICE_KEY` | Mismo panel → *Project API keys* → **`service_role`** (⚠️ secreta, bypassa RLS). La usan edb, grg, matrix, auth, y los módulos fuera de alcance al reactivarse. |
 
 **Comando (pegar con valores reales):**
 
 ```bash
 flyctl secrets set --app docyan-lde-api \
   SUPABASE_URL="https://<tu-ref>.supabase.co" \
-  SUPABASE_KEY="<anon-public-key>" \
   SUPABASE_SERVICE_KEY="<service-role-key>"
 ```
+
+> **NO** setees `SUPABASE_KEY` (anon). Si quedó de un intento previo, quítala:
+> `flyctl secrets unset --app docyan-lde-api SUPABASE_KEY`
 
 ### 1.2. Env vars no-secret (ya resueltas en `fly.toml`, acción opcional)
 
@@ -127,53 +133,73 @@ export DOCYAN_API_URL="https://docyan-lde-api.fly.dev"
 python scripts/smoke_test_backend.py
 ```
 
-El smoke test (`scripts/smoke_test_backend.py`) verifica, sin tocar el worker:
+El smoke test (`scripts/smoke_test_backend.py`) verifica, sin tocar el worker,
+**solo el camino service_role** (B0.7 eliminó el camino anon):
 
 1. `/health` responde 200.
-2. Los módulos que dependen de Supabase **ya no fallan** por config ausente
-   (si faltara un secret, el endpoint devolvería el `RuntimeError` loud de B0.6,
-   no un 200 silencioso ni un 500 críptico).
-3. El cotizador puede consultar `tenant_budget` (lectura inocua) — **solo si el
-   código del cotizador ya está mergeado** (ver §4); si no, el paso se reporta
-   como SKIPPED, no como fallo.
-4. Una operación de FAT/audit_trail de prueba con un tenant de test
-   (`__smoke_test__`), no destructiva, sin contaminar datos reales.
+2. El backend construye el cliente Supabase service_role sin `RuntimeError`
+   (vía `/auth/login` con credenciales bogus: 401 = config OK; 500 = secret
+   ausente, revisar `flyctl logs`). No destructivo.
+3. FAT/audit_trail inserta+lee (con `DOCYAN_SMOKE_TOKEN`: un GET autenticado
+   lee el trail y el request queda auditado). SKIP si no hay token.
+4. El cotizador (`tenant_budget`) se reporta **SKIP** hasta que B2 mergee
+   (`app/ingesta` no está en el árbol todavía). Ver §4.
 
 **Resultado esperado:** `SMOKE OK` con todos los checks en `PASS` (o `SKIP`
 justificado). Cualquier `FAIL` imprime el secret/condición que falta.
 
 ---
 
+## 3.1. Alcance MVP del backend (B0.7) — qué módulos operan y cuáles no
+
+Por la **Adenda de Alcance MVP Consulta Viva** (31-may-2026,
+`docs/DOCYAN_Adenda_Alcance_MVP_ConsultaViva.md`), el backend MVP usa **solo
+service_role en los módulos del camino crítico**. El resto queda
+**explícitamente deshabilitado** hasta su sprint de activación — no es un
+pendiente oculto, es alcance declarado.
+
+**EN alcance MVP (operan contra Supabase service_role):**
+`app/core/edb.py`, `app/core/grg.py`, `app/core/matrix.py`, `app/core/ri.py`
+(vía edb), `app/api/auth.py`. (+ `app/ingesta/budget_manager.py` y
+`document_store.py` al mergear B2 — ver `docs/TODO_B0.7_service_role_en_B2.md`.)
+
+**FUERA de alcance MVP (guardados con `require_module_enabled`, fallan loud salvo
+flag):** `app/core/dii.py` (`DOCYAN_ENABLE_DII`), `app/api/routers/billing.py`
+(`DOCYAN_ENABLE_BILLING`), `app/api/routers/governance.py`
+(`DOCYAN_ENABLE_GOVERNANCE`), `app/api/routers/documents.py`
+(`DOCYAN_ENABLE_DOCUMENTS`), `app/mcp_server.py` (`DOCYAN_ENABLE_MCP_SERVER`).
+
+> En producción MVP **no se setea ningún `DOCYAN_ENABLE_*`** → esos módulos
+> quedan deshabilitados. Para reactivar uno en su sprint, set su flag = `1`.
+
+---
+
 ## 4. Nota operativa importante (verdad operacional)
 
-El Sprint Contract B0.6 referenció `app/ingesta/budget_manager.py`,
+El Sprint Contract referenció `app/ingesta/budget_manager.py`,
 `app/ingesta/document_store.py`, `worker/` y `scripts/smoke_test_ingesta.py`.
 **Esos archivos viven en las ramas `sprint/B2-ingest-engine` /
-`sprint/B2.1-redis-app`, aún NO mergeadas a `main`.** En `main` (base de B0.6) no
-existen todavía.
+`sprint/B2.1-redis-app`, aún NO mergeadas a `main`.** En la rama de B0.7
+(derivada de `main` con B0.6) no existen todavía.
 
 Implicaciones:
 
-- El gap de secrets que B0.6 cierra es **real y aplica a `main`**: los módulos
-  `edb`, `grg`, `matrix`, `auth`, `documents`, `governance`, `billing`,
-  `mcp_server` SÍ están en `main` y SÍ dependen de Supabase. Esos son los que
-  ahora fallan loud.
-- El cotizador (`budget_manager` / `tenant_budget`) y el worker se cablearán
-  cuando B2/B2.1/B2.2 mergeen. El helper de validación loud
-  (`app/core/supabase_client.require_supabase_config`) ya queda disponible para
-  que esos módulos lo adopten al integrarse.
-- El smoke test trata el check del cotizador como **opcional/SKIP** mientras el
-  módulo no esté en el árbol, para no reportar un falso `FAIL`.
+- El gap de secrets es **real y aplica a `main`**: `edb`, `grg`, `matrix`,
+  `auth` (camino crítico) SÍ están en `main` y SÍ dependen de Supabase.
+- El cotizador (`budget_manager` / `tenant_budget`) y `document_store` adoptarán
+  service_role al mergear B2 — acción registrada en
+  `docs/TODO_B0.7_service_role_en_B2.md`. El helper ya está listo.
+- El smoke test trata el check del cotizador como **SKIP** mientras el módulo no
+  esté en el árbol, para no reportar un falso `FAIL`.
 
 ---
 
 ## 5. Resumen ejecutable (TL;DR)
 
 ```bash
-# 1) Backend — los 3 secrets que faltan:
+# 1) Backend — los 2 secrets que faltan (B0.7: solo service_role, sin anon):
 flyctl secrets set --app docyan-lde-api \
   SUPABASE_URL="https://<tu-ref>.supabase.co" \
-  SUPABASE_KEY="<anon-public-key>" \
   SUPABASE_SERVICE_KEY="<service-role-key>"
 
 # 2) Worker — cuando se despliegue B2.2:

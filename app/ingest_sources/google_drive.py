@@ -203,10 +203,11 @@ class GoogleDriveConnector:
 
                 # GRG
                 from supabase import create_client
-                supabase = create_client(
-                    os.getenv("SUPABASE_URL"),
-                    os.getenv("SUPABASE_KEY")
-                )
+
+                # B0.7: anon key eliminada del backend; conector legacy usa service_role.
+                from app.core.supabase_client import require_supabase_config
+                _url, _key = require_supabase_config("gdrive_connector", service=True)
+                supabase = create_client(_url, _key)
                 doc = supabase.table("documents").select("id").eq(
                     "org_id", _org_id
                 ).eq(

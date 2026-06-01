@@ -19,7 +19,7 @@ class EntityDataBrain:
 
     def __init__(self, org_id: str = None):
         self.org_id = org_id or os.getenv("ORG_ID", "default")
-        _url, _key = require_supabase_config("EDB")
+        _url, _key = require_supabase_config("EDB", service=True)
         self.supabase: Client = create_client(_url, _key)
         self.embedder = bge_client
         self.embedding_dims = BGE_M3_DIMS

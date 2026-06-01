@@ -40,7 +40,7 @@ class TraceabilityMatrix:
 
     def __init__(self, org_id: str = None):
         self.org_id = org_id or os.getenv("ORG_ID", "default")
-        _url, _key = require_supabase_config("matrix")
+        _url, _key = require_supabase_config("matrix", service=True)
         self.supabase: Client = create_client(_url, _key)
 
     # ── Log principal ────────────────────────────────────────────────────────

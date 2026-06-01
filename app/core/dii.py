@@ -14,7 +14,7 @@ from supabase import Client, create_client
 from app.core.intent import DocumentIntentAnalyzer
 from app.core.matrix import TraceabilityMatrix
 from app.core.mr import model_router
-from app.core.supabase_client import require_supabase_config
+from app.core.supabase_client import require_module_enabled, require_supabase_config
 
 load_dotenv()
 
@@ -75,7 +75,11 @@ class DigestInputIntelligence:
         if not os.getenv("LANGEXTRACT_API_KEY") and _gemini_key:
             os.environ["LANGEXTRACT_API_KEY"] = _gemini_key
 
-        _url, _key = require_supabase_config("DII")
+        # FUERA DE ALCANCE MVP Consulta Viva (Adenda 31-may-2026): DII es código
+        # legacy reemplazado por GraphRAG-SDK; no se ejercita en MVP. Falla loud
+        # si se invoca sin DOCYAN_ENABLE_DII=1. Cuando se habilite, usa service_role.
+        require_module_enabled("dii")
+        _url, _key = require_supabase_config("DII", service=True)
         self.supabase: Client = create_client(_url, _key)
         self.converter = DocumentConverter()
         self.intent_analyzer = DocumentIntentAnalyzer()

@@ -40,6 +40,9 @@ class ResponseIntelligence:
 
     def __init__(self, org_id: str = None):
         self.org_id = org_id or os.getenv("ORG_ID", "default")
+        # B0.7: RI no construye su propio cliente Supabase. Accede a Supabase vía
+        # `self.edb.supabase` y `self.tm`, que ya usan service_role (camino crítico
+        # MVP). Nada que cambiar aquí: hereda la config service_role de EDB/matrix.
         self.edb = EntityDataBrain(org_id=self.org_id)
         self.tm = TraceabilityMatrix(org_id=self.org_id)
 

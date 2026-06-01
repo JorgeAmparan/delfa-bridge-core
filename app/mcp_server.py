@@ -157,8 +157,11 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     elif name == "list_documents":
         from supabase import create_client
 
-        from app.core.supabase_client import require_supabase_config
-        _url, _key = require_supabase_config("mcp_server")
+        # FUERA DE ALCANCE MVP (Adenda 31-may-2026): el servidor MCP no es parte
+        # del MVP. Falla loud sin DOCYAN_ENABLE_MCP_SERVER=1.
+        from app.core.supabase_client import require_module_enabled, require_supabase_config
+        require_module_enabled("mcp_server")
+        _url, _key = require_supabase_config("mcp_server", service=True)
         supabase = create_client(_url, _key)
 
         resultado = supabase.table("documents").select(

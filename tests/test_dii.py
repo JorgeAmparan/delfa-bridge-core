@@ -1,5 +1,7 @@
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from app.core.dii import (
     EXTENSIONES_SOPORTADAS,
     DigestInputIntelligence,
@@ -49,6 +51,12 @@ class TestExtensiones:
 
 
 class TestDIIInit:
+    @pytest.fixture(autouse=True)
+    def _enable_dii(self, monkeypatch):
+        # DII está FUERA DE ALCANCE MVP (B0.7) y guardado con require_module_enabled.
+        # Estos tests lo ejercitan a propósito, así que habilitan el flag.
+        monkeypatch.setenv("DOCYAN_ENABLE_DII", "1")
+
     @patch("app.core.dii.create_client")
     @patch("app.core.dii.DocumentConverter")
     def test_instantiation(self, mock_converter, mock_supabase):

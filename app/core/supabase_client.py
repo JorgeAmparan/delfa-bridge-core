@@ -34,21 +34,25 @@ dependencia de red.
 
 import os
 
-# Variable de key por modo. SUPABASE_KEY = anon key (RLS aplicado);
-# SUPABASE_SERVICE_KEY = service_role (bypass de RLS, solo backend de confianza).
-_ANON_KEY_VAR = "SUPABASE_KEY"
+# B0.7: el backend usa SOLO `SUPABASE_SERVICE_KEY` (service_role). El aislamiento
+# multi-tenant es a nivel de query (Doc 09) y la integridad del FAT la protege el
+# hash chain SHA-256 (Doc 08), no las RLS de Supabase. La anon key
+# (`SUPABASE_KEY`) quedó ELIMINADA del stack del backend — el frontend nunca
+# habla directo con Supabase. Ver docs/DOCYAN_Adenda_Alcance_MVP_ConsultaViva.md.
 _SERVICE_KEY_VAR = "SUPABASE_SERVICE_KEY"
+_ANON_KEY_VAR = "SUPABASE_KEY"  # legacy; solo si service=False (no usado en MVP).
 
 
-def require_supabase_config(module: str, *, service: bool = False) -> tuple[str, str]:
+def require_supabase_config(module: str, *, service: bool = True) -> tuple[str, str]:
     """
     Valida que la configuración de Supabase esté presente y la devuelve.
 
     Args:
         module: nombre legible del módulo que pide el cliente (para el mensaje
             de error, p. ej. "EDB", "GRG", "matrix", "auth").
-        service: si True usa `SUPABASE_SERVICE_KEY` (service_role, bypass RLS);
-            si False usa `SUPABASE_KEY` (anon).
+        service: B0.7 default True → usa `SUPABASE_SERVICE_KEY` (service_role).
+            `service=False` (anon `SUPABASE_KEY`) queda como modo legacy sin
+            callers en el backend MVP.
 
     Returns:
         Tupla `(url, key)` lista para pasar a `create_client`.
@@ -75,3 +79,33 @@ def require_supabase_config(module: str, *, service: bool = False) -> tuple[str,
         )
 
     return url, key
+
+
+def require_module_enabled(module: str) -> None:
+    """
+    Guard para módulos FUERA DE ALCANCE MVP Consulta Viva (Adenda 31-may-2026).
+
+    Estos módulos (`dii`, `billing`, `governance`, `documents`, `mcp_server`) no
+    son parte del MVP de validación. Quedan en el árbol pero NO deben ejecutarse
+    en producción MVP. Si se invocan sin habilitarlos explícitamente, fallan loud
+    con un mensaje accionable en vez de correr con configuración no diseñada para
+    ese flujo.
+
+    Para reactivar un módulo en su sprint específico (o en un test que lo
+    ejercite a propósito), set `DOCYAN_ENABLE_<MODULE>=1` en el entorno.
+
+    Args:
+        module: identificador del módulo (p. ej. "dii", "billing"). El flag es
+            `DOCYAN_ENABLE_<MODULE-EN-MAYÚSCULAS>`.
+
+    Raises:
+        RuntimeError: si el flag de habilitación no está en "1".
+    """
+    flag = f"DOCYAN_ENABLE_{module.upper()}"
+    if os.getenv(flag) != "1":
+        raise RuntimeError(
+            f"{module} está FUERA DE ALCANCE MVP Consulta Viva "
+            f"(Adenda 31-may-2026) y está deshabilitado en producción. "
+            f"Para reactivarlo en su sprint, set {flag}=1. "
+            f"Ver docs/DOCYAN_Adenda_Alcance_MVP_ConsultaViva.md."
+        )

@@ -9,10 +9,15 @@ from supabase import create_client
 from app.api.auth import requiere_rol
 from app.core.grg import GovernanceGuardrails
 from app.core.matrix import TraceabilityMatrix
-from app.core.supabase_client import require_supabase_config
+from app.core.supabase_client import require_module_enabled, require_supabase_config
 
 load_dotenv()
 
+# FUERA DE ALCANCE MVP Consulta Viva (Adenda 31-may-2026). Este router depende del
+# pipeline legacy DII (DigestInputIntelligence), reemplazado por GraphRAG-SDK; la
+# ingesta MVP corre por el worker (B2), no por aquí. Cada handler que toca Supabase
+# está protegido con require_module_enabled("documents") (flag DOCYAN_ENABLE_DOCUMENTS)
+# y usa service_role. Se reactiva en su sprint de activación.
 router = APIRouter(prefix="/documents", tags=["documents"])
 
 
@@ -53,7 +58,8 @@ async def procesar_documento(
         # GRG si aplica
         resumen_grg = {}
         if aplicar_grg:
-            _url, _key = require_supabase_config("documents")
+            require_module_enabled("documents")
+            _url, _key = require_supabase_config("documents", service=True)
             supabase = create_client(_url, _key)
             doc = supabase.table("documents").select("id").eq(
                 "org_id", org_id
@@ -89,7 +95,8 @@ async def listar_documentos(
     ctx: dict = Depends(requiere_rol("admin", "editor", "viewer"))
 ):
     """Lista todos los documentos de la organización."""
-    _url, _key = require_supabase_config("documents")
+    require_module_enabled("documents")
+    _url, _key = require_supabase_config("documents", service=True)
     supabase = create_client(_url, _key)
     resultado = supabase.table("documents").select(
         "id, name, source_type, status, processed_at, created_at, metadata",
@@ -112,7 +119,8 @@ async def detalle_documento(
     ctx: dict = Depends(requiere_rol("admin", "editor", "viewer"))
 ):
     """Detalle de un documento con sus entidades."""
-    _url, _key = require_supabase_config("documents")
+    require_module_enabled("documents")
+    _url, _key = require_supabase_config("documents", service=True)
     supabase = create_client(_url, _key)
 
     doc = supabase.table("documents").select("*").eq(
@@ -141,7 +149,8 @@ async def eliminar_documento(
     ctx: dict = Depends(requiere_rol("admin"))
 ):
     """Elimina un documento y todos sus registros asociados (cascade)."""
-    _url, _key = require_supabase_config("documents")
+    require_module_enabled("documents")
+    _url, _key = require_supabase_config("documents", service=True)
     supabase = create_client(_url, _key)
     org_id = ctx["org_id"]
 

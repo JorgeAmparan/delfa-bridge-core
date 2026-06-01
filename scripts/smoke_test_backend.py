@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """
-Smoke test del backend DOCYAN LDE™ (B0.6).
+Smoke test del backend DOCYAN LDE™ (B0.6 + B0.7).
 
 Confirma que el backend pasó de "deploy verificado" a "operativo verificado":
-que los secrets de Supabase están seteados y los módulos que dependen de ellos
+que los secrets de Supabase están seteados y los módulos del camino crítico MVP
 responden de verdad, sin tocar el worker.
+
+B0.7: el backend usa SOLO `SUPABASE_SERVICE_KEY` (service_role). Este smoke
+verifica únicamente ese camino — el chequeo de anon key fue eliminado.
 
 Diseño:
 - Corre contra la app desplegada en Fly (HTTP), apuntando a `DOCYAN_API_URL`.
@@ -16,17 +19,17 @@ Diseño:
 Variables:
     DOCYAN_API_URL     (requerida)  ej. https://docyan-lde-api.fly.dev
     DOCYAN_SMOKE_TOKEN (opcional)   JWT de un usuario de prueba para ejercitar
-                                    los caminos autenticados (FAT/audit, anon key).
+                                    el camino autenticado (FAT/audit).
 
 Salida: imprime cada check como PASS / FAIL / SKIP y termina con código 0 si no
 hubo ningún FAIL, 1 en caso contrario.
 
-Mapa con el Sprint Contract (punto 6):
+Mapa con el Sprint Contract:
     1. /health responde                                  → check_health
-    2. backend crea cliente Supabase sin RuntimeError     → check_supabase_service_path
-       (camino service_role vía /auth/login)              + check_supabase_anon_path
-    3. cotizador consulta tenant_budget                   → check_cotizador (SKIP en main)
-    4. FAT/audit_trail inserta y lee (tenant de prueba)   → check_fat_trail
+    2. backend crea cliente Supabase service_role         → check_supabase_service_path
+       sin RuntimeError (vía /auth/login bogus)
+    3. FAT/audit_trail inserta y lee                      → check_fat_trail
+    4. cotizador consulta tenant_budget                   → check_cotizador (SKIP, B2)
 """
 
 import json
@@ -115,25 +118,6 @@ def check_supabase_service_path(base: str) -> None:
         record("Supabase service_role (auth/login)", PASS, f"status={status} — cliente construido")
 
 
-def check_supabase_anon_path(base: str, token: str | None) -> None:
-    """
-    Ejercita el cliente Supabase (anon key) vía un endpoint que construye
-    TraceabilityMatrix/EDB. Requiere token. SKIP si no hay token.
-    """
-    if not token:
-        record("Supabase anon key (trail/recent)", SKIP, "sin DOCYAN_SMOKE_TOKEN")
-        return
-    status, body = _request("GET", f"{base}/trail/recent?limit=1", token=token)
-    if status == 200:
-        record("Supabase anon key (trail/recent)", PASS, "200 — matrix/EDB leyó Supabase")
-    elif status in (401, 403):
-        record("Supabase anon key (trail/recent)", FAIL, f"{status} — token inválido/insuficiente")
-    elif status == 500:
-        record("Supabase anon key (trail/recent)", FAIL, "500 — config Supabase ausente o error")
-    else:
-        record("Supabase anon key (trail/recent)", FAIL, f"status={status} body={body[:120]}")
-
-
 def check_fat_trail(base: str, token: str | None) -> None:
     """
     FAT/audit_trail: inserta + lee. Cada request autenticado dispara un evento
@@ -183,7 +167,6 @@ def main() -> int:
 
     check_health(base)
     check_supabase_service_path(base)
-    check_supabase_anon_path(base, token)
     check_fat_trail(base, token)
     check_cotizador(base)
 
